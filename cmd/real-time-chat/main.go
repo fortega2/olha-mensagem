@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"github.com/fortega2/real-time-chat/internal/server"
+)
 
 func main() {
-	fmt.Println("Real-time chat application starting...")
+	if err := server.Start(); err != nil {
+		panic(err)
+	}
 }
