@@ -1,18 +1,20 @@
 package websocket
 
 type Hub struct {
-	clients    map[*Client]bool
+	clients    map[*Client]struct{}
 	broadcast  chan []byte
 	register   chan *Client
 	unregister chan *Client
+	shutdown   chan struct{}
 }
 
 func NewHub() *Hub {
 	return &Hub{
-		clients:    make(map[*Client]bool),
+		clients:    make(map[*Client]struct{}),
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
+		shutdown:   make(chan struct{}),
 	}
 }
 
@@ -20,7 +22,7 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
-			h.clients[client] = true
+			h.clients[client] = struct{}{}
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
@@ -35,6 +37,22 @@ func (h *Hub) Run() {
 					delete(h.clients, client)
 				}
 			}
+		case <-h.shutdown:
+			return
 		}
 	}
+}
+
+func (h *Hub) Shutdown() {
+	close(h.shutdown)
+
+	for client := range h.clients {
+		close(client.send)
+		client.conn.Close()
+		delete(h.clients, client)
+	}
+
+	close(h.broadcast)
+	close(h.register)
+	close(h.unregister)
 }

@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -12,11 +13,14 @@ var (
 			return true
 		},
 	}
-	hub = NewHub()
+	hub  = NewHub()
+	once sync.Once
 )
 
 func init() {
-	go hub.Run()
+	once.Do(func() {
+		go hub.Run()
+	})
 }
 
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
@@ -31,4 +35,8 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	go client.readHubMessages()
 	go client.processClientMessages()
+}
+
+func Shutdown() {
+	hub.Shutdown()
 }
