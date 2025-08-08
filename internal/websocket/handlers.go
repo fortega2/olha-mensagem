@@ -2,8 +2,10 @@ package websocket
 
 import (
 	"net/http"
+	"strconv"
 	"sync"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
 )
 
@@ -24,13 +26,26 @@ func init() {
 }
 
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
+	userIdStr := chi.URLParam(r, "userId")
+	userId, err := strconv.Atoi(userIdStr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	user := GetUserByID(userId)
+	if user == nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		http.Error(w, "Could not upgrade connection: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	client := NewClient(hub, conn)
+	client := newClient(hub, conn, user)
 	client.hub.register <- client
 
 	go client.readHubMessages()

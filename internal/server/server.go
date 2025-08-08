@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/fortega2/real-time-chat/internal/handlers"
 	"github.com/fortega2/real-time-chat/internal/logger"
 	"github.com/fortega2/real-time-chat/internal/websocket"
 	"github.com/go-chi/chi/v5"
@@ -27,8 +28,8 @@ func NewServer(l logger.Logger) *server {
 func (s *server) Start() error {
 	r := chi.NewRouter()
 
-	configMiddlewares(r)
-	setRoutes(r)
+	s.configMiddlewares(r)
+	s.setRoutes(r)
 
 	port := ":8080"
 
@@ -66,17 +67,16 @@ func (s *server) Start() error {
 	return nil
 }
 
-func configMiddlewares(r *chi.Mux) {
+func (s *server) configMiddlewares(r *chi.Mux) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 }
 
-func setRoutes(r *chi.Mux) {
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "internal/templates/index.html")
-	})
-	r.Get("/ws", websocket.HandleWebSocket)
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK"))
-	})
+func (s *server) setRoutes(r *chi.Mux) {
+	handlers := handlers.NewHandler(s.logger)
+
+	r.Get("/", handlers.Root)
+	r.Post("/login", handlers.Login)
+	r.Get("/users/{id}", handlers.GetUserByID)
+	r.Get("/ws/{userId}", websocket.HandleWebSocket)
 }

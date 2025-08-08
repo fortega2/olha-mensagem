@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"bytes"
+	"encoding/json"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -11,6 +12,7 @@ type Client struct {
 	hub  *Hub
 	conn *websocket.Conn
 	send chan []byte
+	user *User
 }
 
 const (
@@ -20,11 +22,12 @@ const (
 	pingPeriod     = (writeWait * 9) / 10
 )
 
-func NewClient(hub *Hub, conn *websocket.Conn) *Client {
+func newClient(hub *Hub, conn *websocket.Conn, user *User) *Client {
 	return &Client{
 		hub:  hub,
 		conn: conn,
 		send: make(chan []byte, 256),
+		user: user,
 	}
 }
 
@@ -42,13 +45,19 @@ func (c *Client) processClientMessages() {
 	})
 
 	for {
-		_, message, err := c.conn.ReadMessage()
+		_, msgBytes, err := c.conn.ReadMessage()
 		if err != nil {
 			break
 		}
 
-		message = bytes.TrimSpace(bytes.ReplaceAll(message, []byte{'\n'}, []byte{' '}))
-		c.hub.broadcast <- message
+		content := string(bytes.TrimSpace(bytes.ReplaceAll(msgBytes, []byte{'\n'}, []byte{' '})))
+		message := newMessage(c.user, chatType, content)
+		jsonMsg, err := json.Marshal(message)
+		if err != nil {
+			continue
+		}
+
+		c.hub.broadcast <- jsonMsg
 	}
 }
 
