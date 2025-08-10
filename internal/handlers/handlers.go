@@ -58,6 +58,12 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
+
+	if idStr == "" {
+		http.Error(w, "User ID is required", http.StatusBadRequest)
+		return
+	}
+
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
@@ -75,7 +81,6 @@ func (h *handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, failedEncodeuserDataErrMsg, http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 
 	h.logger.Info("User data retrieved", "username", user.Username, "userID", user.ID)
 }
