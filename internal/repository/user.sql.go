@@ -32,20 +32,14 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
-const getUserByUsernameAndPassword = `-- name: GetUserByUsernameAndPassword :one
+const getUserByUsername = `-- name: GetUserByUsername :one
 SELECT id, username, password, created_at
 FROM users
 WHERE username = ?
-AND password = ?
 `
 
-type GetUserByUsernameAndPasswordParams struct {
-	Username string
-	Password string
-}
-
-func (q *Queries) GetUserByUsernameAndPassword(ctx context.Context, arg GetUserByUsernameAndPasswordParams) (User, error) {
-	row := q.queryRow(ctx, q.getUserByUsernameAndPasswordStmt, getUserByUsernameAndPassword, arg.Username, arg.Password)
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
+	row := q.queryRow(ctx, q.getUserByUsernameStmt, getUserByUsername, username)
 	var i User
 	err := row.Scan(
 		&i.ID,

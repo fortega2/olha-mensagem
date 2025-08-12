@@ -3,8 +3,7 @@ INSERT INTO users (username, password)
 VALUES (?, ?)
 RETURNING *;
 
--- name: GetUserByUsernameAndPassword :one
+-- name: GetUserByUsername :one
 SELECT *
 FROM users
-WHERE username = ?
-AND password = ?;
+WHERE username = ?;

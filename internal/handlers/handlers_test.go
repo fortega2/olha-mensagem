@@ -16,6 +16,7 @@ import (
 	"github.com/fortega2/real-time-chat/internal/repository"
 	"github.com/fortega2/real-time-chat/internal/websocket"
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -29,51 +30,113 @@ const (
 
 func TestNewHandler(t *testing.T) {
 	h := handlers.NewHandler(getMockLogger(), nil)
-
 	if h == nil {
 		t.Error(expectedHandlerCreation)
 	}
 }
 
-func TestLogin(t *testing.T) {
-	h := handlers.NewHandler(getMockLogger(), nil)
+func setupLoginTest(t *testing.T) (*sql.DB, *handlers.Handler) {
+	db := initializeTestDB(t)
 
-	if h == nil {
-		t.Error(expectedHandlerCreation)
-	}
+	queries := repository.New(db)
+	h := handlers.NewHandler(getMockLogger(), queries)
 
-	fakeUsername := "testuser"
-
-	usernameByteJson, err := json.Marshal(map[string]string{
-		"username": fakeUsername,
-	})
-
+	password := "password123"
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		t.Fatalf("Failed to marshal JSON: %v", err)
+		t.Fatalf("Failed to hash password: %v", err)
+	}
+	_, err = queries.CreateUser(context.Background(), repository.CreateUserParams{
+		Username: "testuser",
+		Password: string(hashedPassword),
+	})
+	if err != nil {
+		t.Fatalf("Failed to create user for test: %v", err)
 	}
 
-	req := httptest.NewRequest("POST", "/login", bytes.NewBuffer(usernameByteJson))
-	w := httptest.NewRecorder()
-	h.Login(w, req)
+	return db, h
+}
 
-	resp := w.Result()
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			t.Fatalf("Failed to close response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status OK, got %v", resp.Status)
-	}
-
-	var user websocket.User
-	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+func assertSuccessfulLogin(t *testing.T, resp *http.Response, payload map[string]string) {
+	var userDto dto.UserDTO
+	if err := json.NewDecoder(resp.Body).Decode(&userDto); err != nil {
 		t.Fatalf(failedToDecodeResponseBody, err)
 	}
+	if userDto.Username != payload["username"] {
+		t.Errorf(expectedUsernameErrMsg, payload["username"], userDto.Username)
+	}
+	if userDto.ID == 0 {
+		t.Error("Expected user ID to be non-zero")
+	}
+}
 
-	if user.Username != fakeUsername {
-		t.Errorf(expectedUsernameErrMsg, fakeUsername, user.Username)
+func TestLoginUser(t *testing.T) {
+	db, h := setupLoginTest(t)
+	defer db.Close()
+
+	testCases := []struct {
+		name           string
+		payload        map[string]string
+		expectedStatus int
+	}{
+		{
+			name: "Successful Login",
+			payload: map[string]string{
+				"username": "testuser",
+				"password": "password123",
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "User Not Found",
+			payload: map[string]string{
+				"username": "nonexistent",
+				"password": "password123",
+			},
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name: "Invalid Password",
+			payload: map[string]string{
+				"username": "testuser",
+				"password": "wrongpassword",
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "Empty Payload",
+			payload:        map[string]string{},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Missing Password",
+			payload: map[string]string{
+				"username": "testuser",
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			body, _ := json.Marshal(tc.payload)
+			req := httptest.NewRequest("POST", "/login", bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			h.LoginUser(w, req)
+
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tc.expectedStatus {
+				t.Errorf(expectedStatysErrMsg, tc.expectedStatus, resp.StatusCode)
+			}
+
+			if tc.expectedStatus == http.StatusOK {
+				assertSuccessfulLogin(t, resp, tc.payload)
+			}
+		})
 	}
 }
 

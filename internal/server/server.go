@@ -16,19 +16,19 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-type server struct {
+type Server struct {
 	logger  logger.Logger
 	queries *repository.Queries
 }
 
-func NewServer(l logger.Logger, q *repository.Queries) *server {
-	return &server{
+func NewServer(l logger.Logger, q *repository.Queries) *Server {
+	return &Server{
 		logger:  l,
 		queries: q,
 	}
 }
 
-func (s *server) Start() error {
+func (s *Server) Start() error {
 	r := chi.NewRouter()
 
 	s.configMiddlewares(r)
@@ -70,17 +70,19 @@ func (s *server) Start() error {
 	return nil
 }
 
-func (s *server) configMiddlewares(r *chi.Mux) {
+func (s *Server) configMiddlewares(r *chi.Mux) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 }
 
-func (s *server) setRoutes(r *chi.Mux) {
+func (s *Server) setRoutes(r *chi.Mux) {
 	handlers := handlers.NewHandler(s.logger, s.queries)
 
 	r.Get("/", handlers.Root)
-	r.Post("/login", handlers.Login)
+
+	r.Post("/login", handlers.LoginUser)
 	r.Get("/users/{id}", handlers.GetUserByID)
 	r.Post("/users", handlers.CreateUser)
+
 	r.Get("/ws/{userId}", websocket.HandleWebSocket)
 }
