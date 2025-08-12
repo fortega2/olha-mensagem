@@ -1,13 +1,17 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
 
+	"github.com/fortega2/real-time-chat/internal/dto"
 	"github.com/fortega2/real-time-chat/internal/logger"
+	"github.com/fortega2/real-time-chat/internal/repository"
 	"github.com/fortega2/real-time-chat/internal/websocket"
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -15,12 +19,14 @@ const (
 )
 
 type handler struct {
-	logger logger.Logger
+	logger  logger.Logger
+	queries *repository.Queries
 }
 
-func NewHandler(l logger.Logger) *handler {
+func NewHandler(l logger.Logger, q *repository.Queries) *handler {
 	return &handler{
-		logger: l,
+		logger:  l,
+		queries: q,
 	}
 }
 
@@ -46,7 +52,7 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 	user := websocket.NewUser(requestData.Username)
 	websocket.AddUser(user)
 
-	w.Header().Set("Content-Type", "application/json")
+	setContentTypeJSON(w)
 	if err := json.NewEncoder(w).Encode(user); err != nil {
 		h.logger.Error(failedEncodeuserDataErrMsg, "error", err)
 		http.Error(w, failedEncodeuserDataErrMsg, http.StatusInternalServerError)
@@ -76,11 +82,67 @@ func (h *handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	setContentTypeJSON(w)
 	if err := json.NewEncoder(w).Encode(user); err != nil {
 		http.Error(w, failedEncodeuserDataErrMsg, http.StatusInternalServerError)
 		return
 	}
 
 	h.logger.Info("User data retrieved", "username", user.Username, "userID", user.ID)
+}
+
+func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	failedToCreateUserErrMsg := "Failed to create user"
+
+	type createUserRequest struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	var req createUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("Failed to decode request body", "error", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Username == "" || req.Password == "" {
+		h.logger.Error("Username and password cannot be empty")
+		http.Error(w, "Username and password cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		h.logger.Error("Failed to hash password", "error", err)
+		http.Error(w, failedToCreateUserErrMsg, http.StatusInternalServerError)
+		return
+	}
+
+	params := repository.CreateUserParams{
+		Username: req.Username,
+		Password: string(hashedPassword),
+	}
+
+	user, err := h.queries.CreateUser(context.Background(), params)
+	if err != nil {
+		h.logger.Error(failedToCreateUserErrMsg, "error", err)
+		http.Error(w, failedToCreateUserErrMsg, http.StatusInternalServerError)
+		return
+	}
+
+	userDto := dto.NewUserDTO(user.ID, user.Username)
+	setContentTypeJSON(w)
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(userDto); err != nil {
+		h.logger.Error(failedEncodeuserDataErrMsg, "error", err)
+		http.Error(w, failedEncodeuserDataErrMsg, http.StatusInternalServerError)
+		return
+	}
+
+	h.logger.Info("User created successfully", "username", user.Username, "userID", user.ID)
+}
+
+func setContentTypeJSON(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
 }

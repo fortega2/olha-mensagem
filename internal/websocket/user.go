@@ -13,7 +13,7 @@ type User struct {
 }
 
 var (
-	users        = make(map[int]*User) // Map to store users by ID (this is a simple in-memory store, later it could be replaced with a database)
+	users        = make(map[int]*User)
 	randomColors = []string{
 		"#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7",
 		"#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9",

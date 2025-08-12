@@ -10,18 +10,21 @@ import (
 
 	"github.com/fortega2/real-time-chat/internal/handlers"
 	"github.com/fortega2/real-time-chat/internal/logger"
+	"github.com/fortega2/real-time-chat/internal/repository"
 	"github.com/fortega2/real-time-chat/internal/websocket"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
 type server struct {
-	logger logger.Logger
+	logger  logger.Logger
+	queries *repository.Queries
 }
 
-func NewServer(l logger.Logger) *server {
+func NewServer(l logger.Logger, q *repository.Queries) *server {
 	return &server{
-		logger: l,
+		logger:  l,
+		queries: q,
 	}
 }
 
@@ -73,10 +76,11 @@ func (s *server) configMiddlewares(r *chi.Mux) {
 }
 
 func (s *server) setRoutes(r *chi.Mux) {
-	handlers := handlers.NewHandler(s.logger)
+	handlers := handlers.NewHandler(s.logger, s.queries)
 
 	r.Get("/", handlers.Root)
 	r.Post("/login", handlers.Login)
 	r.Get("/users/{id}", handlers.GetUserByID)
+	r.Post("/users", handlers.CreateUser)
 	r.Get("/ws/{userId}", websocket.HandleWebSocket)
 }
