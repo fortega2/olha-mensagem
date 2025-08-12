@@ -156,7 +156,7 @@ func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Info("User logged in successfully", "username", user.Username, "userID")
+	h.logger.Info("User logged in successfully", "username", user.Username, "userID", user.ID)
 }
 
 func setContentTypeJSON(w http.ResponseWriter) {
