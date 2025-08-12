@@ -31,7 +31,7 @@ func (s *server) Start() error {
 	s.configMiddlewares(r)
 	s.setRoutes(r)
 
-	port := ":8080"
+	port := ":" + os.Getenv("PORT")
 
 	server := &http.Server{
 		Addr:    port,
