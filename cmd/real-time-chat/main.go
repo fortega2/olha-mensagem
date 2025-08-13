@@ -12,10 +12,10 @@ func main() {
 	logger := logger.NewSlogLogger()
 
 	if err := godotenv.Load(); err != nil {
-		logger.Fatal("Failed to load environment variables", "error", err)
+		logger.Info("No .env file found, proceeding with default environment variables", "error", err)
+	} else {
+		logger.Info("Environment variables loaded from .env file")
 	}
-
-	logger.Info("Environment variables loaded successfully")
 
 	db, err := database.NewDatabase(logger)
 	if err != nil {
