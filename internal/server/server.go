@@ -35,6 +35,9 @@ func (s *Server) Start() error {
 	s.setRoutes(r)
 
 	port := ":" + os.Getenv("PORT")
+	if port == ":" {
+		port = ":8080"
+	}
 
 	server := &http.Server{
 		Addr:    port,
@@ -77,12 +80,12 @@ func (s *Server) configMiddlewares(r *chi.Mux) {
 
 func (s *Server) setRoutes(r *chi.Mux) {
 	handlers := handlers.NewHandler(s.logger, s.queries)
+	wsHandler := websocket.NewWebsocketHandler(s.logger, s.queries)
 
 	r.Get("/", handlers.Root)
 
 	r.Post("/login", handlers.LoginUser)
-	r.Get("/users/{id}", handlers.GetUserByID)
 	r.Post("/users", handlers.CreateUser)
 
-	r.Get("/ws/{userId}", websocket.HandleWebSocket)
+	r.Get("/ws/{userId}", wsHandler.HandleWebSocket)
 }

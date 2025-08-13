@@ -56,7 +56,9 @@
     <div id="login-container">
         <h2>Login</h2>
         <input type="text" id="usernameInput" placeholder="Enter your username">
+        <input type="password" id="passwordInput" placeholder="Enter your password">
         <button onclick="login()">Login</button>
+        <button onclick="createUser()">Create User</button>
     </div>
 
     <div id="chat-container">
@@ -69,6 +71,7 @@
         const loginContainer = document.getElementById('login-container');
         const chatContainer = document.getElementById('chat-container');
         const usernameInput = document.getElementById('usernameInput');
+        const passwordInput = document.getElementById('passwordInput');
         const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('messageInput');
         let ws;
@@ -93,10 +96,47 @@
             chatContainer.style.display = 'block';
         }
 
-        async function login() {
+        async function createUser() {
             const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
             if (!username) {
                 alert('Please enter a username.');
+                return;
+            }
+
+            if (!password) {
+                alert('Please enter a password.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, password: password })
+                });
+
+                if (!response.ok) {
+                    throw new Error('User creation failed');
+                }
+
+                alert('User created successfully. Please log in.');
+            } catch (error) {
+                console.error('User creation error:', error);
+                alert('Could not create user.');
+            }
+        }
+
+        async function login() {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            if (!username) {
+                alert('Please enter a username.');
+                return;
+            }
+
+            if (!password) {
+                alert('Please enter a password.');
                 return;
             }
 
@@ -104,7 +144,7 @@
                 const response = await fetch('/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: username })
+                    body: JSON.stringify({ username: username, password: password })
                 });
 
                 if (!response.ok) {

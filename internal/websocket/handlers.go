@@ -5,9 +5,16 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/fortega2/real-time-chat/internal/logger"
+	"github.com/fortega2/real-time-chat/internal/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
 )
+
+type WebsocketHandler struct {
+	logger  logger.Logger
+	queries *repository.Queries
+}
 
 var (
 	upgrader = websocket.Upgrader{
@@ -25,26 +32,37 @@ func init() {
 	})
 }
 
-func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
+func NewWebsocketHandler(l logger.Logger, q *repository.Queries) *WebsocketHandler {
+	return &WebsocketHandler{
+		logger:  l,
+		queries: q,
+	}
+}
+
+func (wh *WebsocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	userIdStr := chi.URLParam(r, "userId")
 	userId, err := strconv.Atoi(userIdStr)
 	if err != nil {
+		wh.logger.Error("Invalid user ID", "error", err)
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
 
-	user := GetUserByID(userId)
-	if user == nil {
+	dbUser, err := wh.queries.GetUserByID(r.Context(), int64(userId))
+	if err != nil {
+		wh.logger.Error("Failed to get user by ID", "error", err)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
+		wh.logger.Error("Failed to upgrade connection", "error", err)
 		http.Error(w, "Could not upgrade connection: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	user := NewUser(int(dbUser.ID), dbUser.Username)
 	client := newClient(hub, conn, user)
 	client.hub.register <- client
 

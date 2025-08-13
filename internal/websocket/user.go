@@ -13,7 +13,6 @@ type User struct {
 }
 
 var (
-	users        = make(map[int]*User)
 	randomColors = []string{
 		"#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7",
 		"#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9",
@@ -21,28 +20,13 @@ var (
 	}
 )
 
-func NewUser(username string) *User {
+func NewUser(id int, username string) *User {
 	return &User{
-		ID:       generateRandomID(),
+		ID:       id,
 		Username: username,
 		Color:    generateRandomColor(),
 		JoinedAt: time.Now(),
 	}
-}
-
-func AddUser(user *User) {
-	users[user.ID] = user
-}
-
-func GetUserByID(id int) *User {
-	if user, exists := users[id]; exists {
-		return user
-	}
-	return nil
-}
-
-func generateRandomID() int {
-	return int(time.Now().UnixNano() / int64(time.Millisecond))
 }
 
 func generateRandomColor() string {

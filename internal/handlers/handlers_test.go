@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 
 	"github.com/fortega2/real-time-chat/internal/dto"
@@ -15,7 +14,6 @@ import (
 	"github.com/fortega2/real-time-chat/internal/logger"
 	"github.com/fortega2/real-time-chat/internal/repository"
 	"github.com/fortega2/real-time-chat/internal/websocket"
-	"github.com/go-chi/chi/v5"
 	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -234,51 +232,6 @@ func TestLoginUserInvalidJSONSyntax(t *testing.T) {
 
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf(expectedStatusErrMsg, http.StatusBadRequest, resp.StatusCode)
-	}
-}
-
-func TestGetUserByID(t *testing.T) {
-	h := handlers.NewHandler(getMockLogger(), nil)
-	user := websocket.NewUser("testuser")
-	websocket.AddUser(user)
-
-	testCases := []struct {
-		name           string
-		userID         string
-		expectedStatus int
-	}{
-		{"Successful Get User", strconv.Itoa(user.ID), http.StatusOK},
-		{"User Not Found", "9999", http.StatusNotFound},
-		{"Invalid User ID", "invalid-id", http.StatusBadRequest},
-		{"Empty User ID", "", http.StatusBadRequest},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/user/"+tc.userID, nil)
-			rctx := chi.NewRouteContext()
-			if tc.userID != "" {
-				rctx.URLParams.Add("id", tc.userID)
-			}
-			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
-			w := httptest.NewRecorder()
-
-			h.GetUserByID(w, req)
-
-			resp := w.Result()
-			defer resp.Body.Close()
-
-			if resp.StatusCode != tc.expectedStatus {
-				t.Errorf(expectedStatusErrMsg, tc.expectedStatus, resp.StatusCode)
-			}
-
-			if tc.expectedStatus == http.StatusOK {
-				if resp.Header.Get(headerContentType) != mimeApplicationJSON {
-					t.Errorf(contentTypeErrFmt, resp.Header.Get(headerContentType))
-				}
-				checkSuccessfulGetUserByIDResponse(t, w.Body, user)
-			}
-		})
 	}
 }
 

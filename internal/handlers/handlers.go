@@ -3,13 +3,10 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/fortega2/real-time-chat/internal/dto"
 	"github.com/fortega2/real-time-chat/internal/logger"
 	"github.com/fortega2/real-time-chat/internal/repository"
-	"github.com/fortega2/real-time-chat/internal/websocket"
-	"github.com/go-chi/chi/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -33,35 +30,6 @@ func NewHandler(l logger.Logger, q *repository.Queries) *Handler {
 
 func (h *Handler) Root(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "internal/templates/index.html")
-}
-
-func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-
-	if idStr == "" {
-		http.Error(w, "User ID is required", http.StatusBadRequest)
-		return
-	}
-
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
-		return
-	}
-
-	user := websocket.GetUserByID(id)
-	if user == nil {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
-
-	setContentTypeJSON(w)
-	if err := json.NewEncoder(w).Encode(user); err != nil {
-		http.Error(w, failedEncodeuserDataErrMsg, http.StatusInternalServerError)
-		return
-	}
-
-	h.logger.Info("User data retrieved", "username", user.Username, "userID", user.ID)
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
