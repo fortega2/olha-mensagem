@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/fortega2/real-time-chat/internal/dto"
-	"github.com/fortega2/real-time-chat/internal/logger"
 	"github.com/fortega2/real-time-chat/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -15,22 +14,6 @@ const (
 	usernameAndPasswordEmptyErrMsg = "Username and password cannot be empty"
 	invalidRequestBodyErrMsg       = "Invalid request body"
 )
-
-type Handler struct {
-	logger  logger.Logger
-	queries *repository.Queries
-}
-
-func NewHandler(l logger.Logger, q *repository.Queries) *Handler {
-	return &Handler{
-		logger:  l,
-		queries: q,
-	}
-}
-
-func (h *Handler) Root(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "internal/templates/index.html")
-}
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	failedToCreateUserErrMsg := "Failed to create user"

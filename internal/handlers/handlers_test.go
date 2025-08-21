@@ -13,7 +13,6 @@ import (
 	"github.com/fortega2/real-time-chat/internal/handlers"
 	"github.com/fortega2/real-time-chat/internal/logger"
 	"github.com/fortega2/real-time-chat/internal/repository"
-	"github.com/fortega2/real-time-chat/internal/websocket"
 	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -307,19 +306,5 @@ func checkSuccessfulLoginResponse(t *testing.T, body *bytes.Buffer, username str
 	}
 	if userDto.ID == 0 {
 		t.Error("expected user ID to be non-zero")
-	}
-}
-
-func checkSuccessfulGetUserByIDResponse(t *testing.T, body *bytes.Buffer, expectedUser *websocket.User) {
-	t.Helper()
-	var returnedUser websocket.User
-	if err := json.NewDecoder(body).Decode(&returnedUser); err != nil {
-		t.Fatalf(failedToDecodeResponseBody, err)
-	}
-	if returnedUser.ID != expectedUser.ID {
-		t.Errorf("expected user ID %d, got %d", expectedUser.ID, returnedUser.ID)
-	}
-	if returnedUser.Username != expectedUser.Username {
-		t.Errorf(expectedUsernameErrMsg, expectedUser.Username, returnedUser.Username)
 	}
 }
