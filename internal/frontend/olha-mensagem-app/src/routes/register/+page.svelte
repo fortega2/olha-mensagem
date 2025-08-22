@@ -9,21 +9,27 @@
 	import Input from "$lib/components/ui/input/input.svelte";
 	import Label from "$lib/components/ui/label/label.svelte";
 	import { UserService } from "$lib/services/user.service";
-	import type { LoginForm, UserDto } from "$lib/types/user.types";
+	import type { RegisterForm, UserDto } from "$lib/types/user.types";
 
-    const loginForm: LoginForm = $state({
+    const registerForm: RegisterForm = $state({
         username: '',
-        password: ''
+        password: '',
+        confirmPassword: ''
     });
 
     const handleSubmit = async (event: Event) => {
         event.preventDefault();
 
+        if (!validateForm()) {
+            console.error('Passwords do not match');
+            return;
+        }
+
         try {
             const userService = new UserService();
             try {
-                const user: UserDto = await userService.login(loginForm.username, loginForm.password);
-                console.log('Login successful', user);
+                const user: UserDto = await userService.register(registerForm.username, registerForm.password);
+                goto('/login');
             } catch (error) {
                 console.error('Login failed', error);
             }
@@ -31,15 +37,22 @@
             console.error('Error during login', err.message);
         }
     };
-    const handleRegisterRedirect = () => goto('/register');
+    const validateForm = () => {
+        if (registerForm.password !== registerForm.confirmPassword) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    const handleLoginRedirect = () => goto('/login');
 </script>
 
 <div class="min-h-screen flex items-center justify-center bg-gray-100">
     <Card class="w-full max-w-md">
         <CardHeader class="text-center">
-            <CardTitle>Login</CardTitle>
+            <CardTitle>Register</CardTitle>
             <CardDescription>
-                Log your credentials to access the chat.
+                Register your credentials to access the chat.
             </CardDescription>
         </CardHeader>
         <CardContent>
@@ -49,7 +62,7 @@
                     <Input
                         id="username"
                         type="text"
-                        bind:value={loginForm.username}
+                        bind:value={registerForm.username}
                         placeholder="Enter your username"
                         required
                     />
@@ -59,13 +72,23 @@
                     <Input
                         id="password"
                         type="password"
-                        bind:value={loginForm.password}
+                        bind:value={registerForm.password}
                         placeholder="Enter your password"
                         required
                     />
                 </div>
-                <Button type="submit" class="w-full mt-4 cursor-pointer">Login</Button>
-                <Button type="button" class="w-full mt-2 cursor-pointer" onclick={handleRegisterRedirect}>Register</Button>
+                <div class="space-y-2 mt-4">
+                    <Label for="confirmPassword">Confirm Password</Label>
+                    <Input
+                        id="confirmPassword"
+                        type="password"
+                        bind:value={registerForm.confirmPassword}
+                        placeholder="Confirm your password"
+                        required
+                    />
+                </div>
+                <Button type="submit" class="w-full mt-4 cursor-pointer">Register</Button>
+                <Button type="button" class="w-full mt-2 cursor-pointer" onclick={handleLoginRedirect}>Login</Button>
             </form>
         </CardContent>
     </Card>
