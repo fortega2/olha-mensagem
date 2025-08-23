@@ -3,23 +3,11 @@ export type UserDto = {
 	username: string;
 };
 
-export type LoginForm = {
+export type AuthCredentials = {
 	username: string;
 	password: string;
 };
 
-export type LoginRequest = {
-	username: string;
-	password: string;
-};
-
-export type RegisterForm = {
-	username: string;
-	password: string;
+export type RegisterForm = AuthCredentials & {
 	confirmPassword: string;
-};
-
-export type RegisterRequest = {
-	username: string;
-	password: string;
 };

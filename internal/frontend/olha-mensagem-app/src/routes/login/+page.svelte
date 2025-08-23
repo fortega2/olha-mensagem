@@ -9,9 +9,9 @@
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Label from '$lib/components/ui/label/label.svelte';
 	import { UserService } from '$lib/services/user.service';
-	import type { LoginForm, UserDto } from '$lib/types/user.types';
+	import type { AuthCredentials, UserDto } from '$lib/types/user.types';
 
-	const loginForm: LoginForm = $state({
+	const loginForm: AuthCredentials = $state({
 		username: '',
 		password: ''
 	});
@@ -23,6 +23,7 @@
 			const userService = new UserService();
 			const user: UserDto = await userService.login(loginForm.username, loginForm.password);
 			console.log('Login successful', user);
+			goto('/');
 		} catch (err: unknown) {
 			if (err instanceof Error) {
 				console.error('Error during login', err.message);

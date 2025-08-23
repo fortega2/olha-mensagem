@@ -31,7 +31,7 @@
 				registerForm.username,
 				registerForm.password
 			);
-			localStorage.setItem('user', JSON.stringify(user));
+			sessionStorage.setItem('user', JSON.stringify(user));
 			goto('/login');
 		} catch (err: unknown) {
 			if (err instanceof Error) {

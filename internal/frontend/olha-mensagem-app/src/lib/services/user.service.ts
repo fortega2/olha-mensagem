@@ -1,4 +1,4 @@
-import type { LoginRequest, RegisterRequest, UserDto } from '$lib/types/user.types';
+import type { AuthCredentials, UserDto } from '$lib/types/user.types';
 
 export class UserService {
 	private readonly _baseUrl: string = 'http://localhost:8080/api';
@@ -9,7 +9,7 @@ export class UserService {
 	};
 
 	public async login(username: string, password: string): Promise<UserDto> {
-		const loginData: LoginRequest = { username, password };
+		const loginData: AuthCredentials = { username, password };
 
 		const response = await fetch(`${this._fullUrl}/login`, {
 			method: 'POST',
@@ -26,7 +26,7 @@ export class UserService {
 	}
 
 	public async register(username: string, password: string): Promise<UserDto> {
-		const registerData: RegisterRequest = { username, password };
+		const registerData: AuthCredentials = { username, password };
 
 		const response = await fetch(this._fullUrl, {
 			method: 'POST',
