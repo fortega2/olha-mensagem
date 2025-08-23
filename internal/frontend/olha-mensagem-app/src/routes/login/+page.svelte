@@ -10,6 +10,7 @@
 	import Label from '$lib/components/ui/label/label.svelte';
 	import { UserService } from '$lib/services/user.service';
 	import type { AuthCredentials, UserDto } from '$lib/types/user.types';
+	import { toast } from 'svelte-sonner';
 
 	const loginForm: AuthCredentials = $state({
 		username: '',
@@ -22,14 +23,11 @@
 		try {
 			const userService = new UserService();
 			const user: UserDto = await userService.login(loginForm.username, loginForm.password);
-			console.log('Login successful', user);
 			goto('/');
 		} catch (err: unknown) {
-			if (err instanceof Error) {
-				console.error('Error during login', err.message);
-			} else {
-				console.error('Unexpected error during login', err);
-			}
+			err instanceof Error
+				? toast.error(`Error during login: ${err.message}`)
+				: toast.error('Unexpected error during login');
 		}
 	};
 	const handleRegisterRedirect = () => goto('/register');

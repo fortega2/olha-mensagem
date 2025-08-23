@@ -10,6 +10,7 @@
 	import Label from '$lib/components/ui/label/label.svelte';
 	import { UserService } from '$lib/services/user.service';
 	import type { RegisterForm, UserDto } from '$lib/types/user.types';
+	import { toast } from 'svelte-sonner';
 
 	const registerForm: RegisterForm = $state({
 		username: '',
@@ -21,7 +22,7 @@
 		event.preventDefault();
 
 		if (!validateForm()) {
-			console.error('Passwords do not match');
+			toast.error('Passwords do not match');
 			return;
 		}
 
@@ -34,11 +35,9 @@
 			sessionStorage.setItem('user', JSON.stringify(user));
 			goto('/login');
 		} catch (err: unknown) {
-			if (err instanceof Error) {
-				console.error('Error during registration', err.message);
-			} else {
-				console.error('Unexpected error during Registration', err);
-			}
+			err instanceof Error
+				? toast.error(`Registration failed: ${err.message}`)
+				: toast.error('Registration failed: Unexpected error');
 		}
 	};
 	const validateForm = () => {
