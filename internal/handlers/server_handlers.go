@@ -15,15 +15,15 @@ const (
 	invalidRequestBodyErrMsg       = "Invalid request body"
 )
 
+type userCreateLoginDTO struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	failedToCreateUserErrMsg := "Failed to create user"
 
-	type createUserRequest struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
-
-	var req createUserRequest
+	var req userCreateLoginDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Error("Failed to decode request body", "error", err)
 		http.Error(w, invalidRequestBodyErrMsg, http.StatusBadRequest)
@@ -68,17 +68,14 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
-	type loginUserRequest struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
-
-	var req loginUserRequest
+	var req userCreateLoginDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Error("Failed to decode request body", "error", err)
 		http.Error(w, invalidRequestBodyErrMsg, http.StatusBadRequest)
 		return
 	}
+
+	h.logger.Debug("Login attempt", "username", req.Username, "password_provided", req.Password != "")
 
 	if req.Username == "" || req.Password == "" {
 		h.logger.Error(usernameAndPasswordEmptyErrMsg)
@@ -92,6 +89,8 @@ func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
+
+	h.logger.Debug("User retrieved", "userID", user.ID, "username", user.Username)
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		h.logger.Error("Invalid password", "username", req.Username)

@@ -82,10 +82,13 @@ func (s *Server) setRoutes(r *chi.Mux) {
 	handlers := handlers.NewHandler(s.logger, s.queries)
 	wsHandler := websocket.NewWebsocketHandler(s.logger, s.queries)
 
-	r.Get("/", handlers.RootPage)
+	r.Route("/api", func(r chi.Router) {
+		r.Route("/users", func(r chi.Router) {
+			r.Post("/login", handlers.LoginUser)
+			r.Post("/", handlers.CreateUser)
+		})
+		r.Get("/ws/{userId}", wsHandler.HandleWebSocket)
+	})
 
-	r.Post("/login", handlers.LoginUser)
-	r.Post("/users", handlers.CreateUser)
-
-	r.Get("/ws/{userId}", wsHandler.HandleWebSocket)
+	r.Mount("/", s.serveStaticFiles())
 }
