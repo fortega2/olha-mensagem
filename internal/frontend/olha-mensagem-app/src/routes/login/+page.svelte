@@ -27,7 +27,7 @@
 			goto('/chat');
 		} catch (err: unknown) {
 			if (err instanceof Error) {
-				toast.error(`Error during login: ${err.message}`);
+				toast.error(`${err.message}`);
 			} else {
 				toast.error('Unexpected error during login');
 			}
