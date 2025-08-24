@@ -35,9 +35,11 @@
 			sessionStorage.setItem('user', JSON.stringify(user));
 			goto('/login');
 		} catch (err: unknown) {
-			err instanceof Error
-				? toast.error(`Registration failed: ${err.message}`)
-				: toast.error('Registration failed: Unexpected error');
+			if (err instanceof Error) {
+				toast.error(`Registration failed: ${err.message}`);
+			} else {
+				toast.error('Registration failed: Unexpected error');
+			}
 		}
 	};
 	const validateForm = () => {

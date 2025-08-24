@@ -20,14 +20,17 @@
 	const handleSubmit = async (event: Event) => {
 		event.preventDefault();
 
+		const userService = new UserService();
 		try {
-			const userService = new UserService();
-			const user: UserDto = await userService.login(loginForm.username, loginForm.password);
-			goto('/');
+			const userDto: UserDto = await userService.login(loginForm.username, loginForm.password);
+			sessionStorage.setItem('user', JSON.stringify(userDto));
+			goto('/chat');
 		} catch (err: unknown) {
-			err instanceof Error
-				? toast.error(`Error during login: ${err.message}`)
-				: toast.error('Unexpected error during login');
+			if (err instanceof Error) {
+				toast.error(`Error during login: ${err.message}`);
+			} else {
+				toast.error('Unexpected error during login');
+			}
 		}
 	};
 	const handleRegisterRedirect = () => goto('/register');

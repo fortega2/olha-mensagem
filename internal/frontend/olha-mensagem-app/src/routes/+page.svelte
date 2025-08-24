@@ -1,14 +1,18 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 
 	onMount(() => {
-		if (browser && !sessionStorage.getItem('user')) {
+		if (!sessionStorage.getItem('user')) {
 			goto('/login');
+		} else {
+			goto('/chat');
 		}
 	});
 </script>
 
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<div class="flex min-h-screen items-center justify-center bg-gray-100">
+	<div class="text-center">
+		<p class="text-lg text-gray-600">Redirecting...</p>
+	</div>
+</div>
