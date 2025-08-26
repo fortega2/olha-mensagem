@@ -3,11 +3,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: olha-mensagem-app:latest
+    container_name: olha-mensagem-app
+    environment:
+      PORT: 8080
+      DB_NAME: /app/data/olha_mensagem.db
+      DB_MIGRATIONS_PATH: /app/internal/database/migrations
+    volumes:
+      - olha-mensagem-db-data:/app/data
     ports:
       - "8080:8080"
-    environment:
-      - PORT=8080
-      - DB_NAME=/app/olha_mensagem.db
-      - DB_MIGRATIONS_PATH=/app/internal/database/migrations
-    volumes:
-      - ./olha_mensagem.db:/app/olha_mensagem.db
+    restart: unless-stopped
+
+volumes:
+  olha-mensagem-db-data:
