@@ -1,6 +1,11 @@
 FROM oven/bun:1.2.20-alpine AS frontend
 WORKDIR /app/internal/frontend/olha-mensagem-app
-COPY internal/frontend/olha-mensagem-app/package.json internal/frontend/olha-mensagem-app/bun.lock ./
+COPY internal/frontend/olha-mensagem-app/package.json \
+    internal/frontend/olha-mensagem-app/bun.lock \
+    internal/frontend/olha-mensagem-app/svelte.config.js \
+    internal/frontend/olha-mensagem-app/tsconfig.json \
+    internal/frontend/olha-mensagem-app/vite.config.ts \
+    ./
 RUN bun install --frozen-lockfile
 COPY internal/frontend/olha-mensagem-app/ .
 RUN bun run build
@@ -12,7 +17,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=frontend /app/internal/frontend/olha-mensagem-app/build internal/frontend/olha-mensagem-app/build
-ENV CGO_ENABLED=1 GOOS=linux GOARCH=amd64
+ENV CGO_ENABLED=1
 RUN go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/main ./cmd/real-time-chat
 
 FROM alpine:3.22
