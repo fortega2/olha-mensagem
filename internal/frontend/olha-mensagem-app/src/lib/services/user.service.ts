@@ -1,9 +1,8 @@
+import { API_USERS_BASE } from '$lib/config';
 import type { AuthCredentials, UserDto } from '$lib/types/user.types';
 
 export class UserService {
-	private readonly _baseUrl: string = 'http://localhost:8080/api';
-	private readonly _resourceName: string = 'users';
-	private readonly _fullUrl: string = `${this._baseUrl}/${this._resourceName}`;
+	private readonly _fullUrl: string = API_USERS_BASE;
 	private readonly _headers: HeadersInit = {
 		'Content-Type': 'application/json'
 	};

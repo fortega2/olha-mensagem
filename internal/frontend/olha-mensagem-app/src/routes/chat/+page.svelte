@@ -10,6 +10,7 @@
 	import Input from '$lib/components/ui/input/input.svelte';
 	import type { UserDto } from '$lib/types/user.types';
 	import type { ChatMessage } from '$lib/types/websocket.types';
+	import { wsUrl } from '$lib/config';
 
 	let ws: WebSocket | null = null;
 
@@ -53,7 +54,7 @@
 	const connectWebSocket = () => {
 		if (!user) return;
 		connecting = true;
-		ws = new WebSocket(`ws://localhost:8080/api/ws/${user.id}`);
+		ws = new WebSocket(wsUrl(Number(user.id)));
 
 		ws.onopen = () => {
 			connecting = false;
@@ -120,9 +121,9 @@
 				class="flex-1 space-y-3 overflow-y-auto rounded border bg-white p-3 text-sm"
 			>
 				{#if connecting}
-					<p class="text-gray-500 italic">Conectando...</p>
+					<p class="italic text-gray-500">Conectando...</p>
 				{:else if messages.length === 0}
-					<p class="text-gray-400 italic">Sin mensajes todavía.</p>
+					<p class="italic text-gray-400">Sin mensajes todavía.</p>
 				{:else}
 					{#each messages as m (m.timestamp + m.userId)}
 						<div class="group">
@@ -132,7 +133,7 @@
 								>
 								<span class="text-[10px] text-gray-400">{formatTime(m.timestamp)}</span>
 							</div>
-							<div class="mt-0.5 pl-1 break-words whitespace-pre-wrap">
+							<div class="mt-0.5 whitespace-pre-wrap break-words pl-1">
 								{m.content}
 							</div>
 						</div>
