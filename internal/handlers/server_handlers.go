@@ -30,6 +30,8 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.logger.Debug("Create user attempt", "username", req.Username, "password_provided", req.Password != "")
+
 	if req.Username == "" || req.Password == "" {
 		h.logger.Error(usernameAndPasswordEmptyErrMsg)
 		http.Error(w, usernameAndPasswordEmptyErrMsg, http.StatusBadRequest)
@@ -42,6 +44,8 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, failedToCreateUserErrMsg, http.StatusInternalServerError)
 		return
 	}
+
+	h.logger.Debug("Password hashed successfully", "username", req.Username)
 
 	params := repository.CreateUserParams{
 		Username: req.Username,
@@ -56,6 +60,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userDto := dto.NewUserDTO(user.ID, user.Username)
+
 	setContentTypeJSON(w)
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(userDto); err != nil {
@@ -64,7 +69,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Info("User created successfully", "username", user.Username, "userID", user.ID)
+	h.logger.Info("User created successfully", "userID", user.ID, "username", user.Username)
 }
 
 func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {

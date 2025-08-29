@@ -77,8 +77,6 @@ func (s *Server) setRoutes(r *chi.Mux) {
 	wsHandler := websocket.NewWebsocketHandler(s.logger, s.queries)
 
 	r.Route("/api", func(r chi.Router) {
-		r.Use(middleware.Logger)
-
 		r.Route("/users", func(r chi.Router) {
 			r.Post("/login", handlers.LoginUser)
 			r.Post("/", handlers.CreateUser)

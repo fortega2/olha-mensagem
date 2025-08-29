@@ -48,12 +48,16 @@ func (wh *WebsocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	wh.logger.Info("WebSocket connection attempt", "userID", userId)
+
 	dbUser, err := wh.queries.GetUserByID(r.Context(), int64(userId))
 	if err != nil {
 		wh.logger.Error("Failed to get user by ID", "error", err)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
+
+	wh.logger.Debug("User found. Attempting to upgrade to WebSocket", "userID", userId, "username", dbUser.Username)
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -62,8 +66,13 @@ func (wh *WebsocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	wh.logger.Info("WebSocket connection established", "userID", userId, "username", dbUser.Username)
+
 	user := NewUser(int(dbUser.ID), dbUser.Username)
 	client := newClient(hub, conn, user)
+
+	wh.logger.Debug("Registering new client to hub", "user", user)
+
 	client.hub.register <- client
 
 	go client.readHubMessages()
