@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/fortega2/real-time-chat/internal/database"
 	"github.com/fortega2/real-time-chat/internal/logger"
 	"github.com/fortega2/real-time-chat/internal/repository"
@@ -9,10 +11,13 @@ import (
 )
 
 func main() {
-	logger := logger.NewSlogLogger()
+	err := godotenv.Load()
 
-	if err := godotenv.Load(); err != nil {
-		logger.Info("No .env file found, proceeding with default environment variables", "error", err)
+	logger := logger.NewSlogLogger()
+	logger.Info("Logger initialized with level " + os.Getenv("LOG_LEVEL"))
+
+	if err != nil {
+		logger.Info("No .env file found, proceeding with default environment variables")
 	} else {
 		logger.Info("Environment variables loaded from .env file")
 	}
