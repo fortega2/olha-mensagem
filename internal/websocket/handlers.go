@@ -22,17 +22,16 @@ var (
 			return true
 		},
 	}
-	hub  = NewHub()
+	hub  *Hub
 	once sync.Once
 )
 
-func init() {
+func NewWebsocketHandler(l logger.Logger, q *repository.Queries) *WebsocketHandler {
 	once.Do(func() {
+		hub = NewHub(l)
 		go hub.Run()
 	})
-}
 
-func NewWebsocketHandler(l logger.Logger, q *repository.Queries) *WebsocketHandler {
 	return &WebsocketHandler{
 		logger:  l,
 		queries: q,
@@ -75,8 +74,8 @@ func (wh *WebsocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reque
 
 	client.hub.register <- client
 
-	go client.readHubMessages()
-	go client.processClientMessages()
+	go client.writeClientMessages()
+	go client.readClientMessages()
 }
 
 func Shutdown() {

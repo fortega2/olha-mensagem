@@ -121,22 +121,28 @@
 				class="flex-1 space-y-3 overflow-y-auto rounded border bg-white p-3 text-sm"
 			>
 				{#if connecting}
-					<p class="italic text-gray-500">Conectando...</p>
+					<p class="text-gray-500 italic">Conectando...</p>
 				{:else if messages.length === 0}
-					<p class="italic text-gray-400">Sin mensajes todavía.</p>
+					<p class="text-gray-400 italic">Sin mensajes todavía.</p>
 				{:else}
-					{#each messages as m (m.timestamp + m.userId)}
-						<div class="group">
-							<div class="flex items-baseline gap-2">
-								<span class="font-semibold" style={`color:${m.color}`}
-									>#{m.userId} {m.username}</span
-								>
-								<span class="text-[10px] text-gray-400">{formatTime(m.timestamp)}</span>
+					{#each messages as m (m.timestamp + (m.userId ?? 0))}
+						{#if m.type === 'Chat'}
+							<div class="group">
+								<div class="flex items-baseline gap-2">
+									<span class="font-semibold" style={`color:${m.color}`}
+										>#{m.userId} {m.username}</span
+									>
+									<span class="text-[10px] text-gray-400">{formatTime(m.timestamp)}</span>
+								</div>
+								<div class="mt-0.5 pl-1 break-words whitespace-pre-wrap">
+									{m.content}
+								</div>
 							</div>
-							<div class="mt-0.5 whitespace-pre-wrap break-words pl-1">
-								{m.content}
+						{:else}
+							<div class="text-center text-xs text-gray-500 italic">
+								{m.content} <span class="text-[10px]">({formatTime(m.timestamp)})</span>
 							</div>
-						</div>
+						{/if}
 					{/each}
 				{/if}
 			</div>
