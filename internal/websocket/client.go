@@ -62,7 +62,7 @@ func (c *Client) readClientMessages() {
 
 		c.hub.logger.Debug("Message received", "user", c.user, "content", content)
 
-		message := newChatMessage(c.user, chatType, content)
+		message := NewChatMessage(c.user, chatType, content)
 		jsonMsg, err := json.Marshal(message)
 		if err != nil {
 			c.hub.logger.Error("Failed to marshal message", "error", err, "user", c.user)
