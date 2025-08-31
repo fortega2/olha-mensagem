@@ -16,7 +16,7 @@ type Message struct {
 	Color     string `json:"color"`
 }
 
-func newChatMessage(user *User, typeMsg, content string) Message {
+func NewChatMessage(user *User, typeMsg, content string) Message {
 	return Message{
 		Type:      typeMsg,
 		UserID:    &user.ID,
@@ -27,7 +27,7 @@ func newChatMessage(user *User, typeMsg, content string) Message {
 	}
 }
 
-func newNotificationMessage(content string) Message {
+func NewNotificationMessage(content string) Message {
 	return Message{
 		Type:      notificationType,
 		Content:   content,
