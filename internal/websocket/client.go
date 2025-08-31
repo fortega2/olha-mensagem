@@ -60,8 +60,6 @@ func (c *Client) readClientMessages() {
 			continue
 		}
 
-		c.hub.logger.Debug("Message received", "user", c.user, "content", content)
-
 		message := NewChatMessage(c.user, chatType, content)
 		jsonMsg, err := json.Marshal(message)
 		if err != nil {

@@ -77,7 +77,11 @@ func (h *Hub) Shutdown() {
 }
 
 func (h *Hub) sendNotificationMessage(message string) {
+<<<<<<< HEAD
 	notificationMsg := NewNotificationMessage(message)
+=======
+	notificationMsg := newNotificationMessage(message)
+>>>>>>> main
 	jsonMsg, err := json.Marshal(notificationMsg)
 	if err != nil {
 		h.logger.Error("Failed to marshal notification message", "error", err)
