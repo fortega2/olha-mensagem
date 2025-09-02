@@ -5,12 +5,14 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/fortega2/real-time-chat/internal/handlers"
 	"github.com/fortega2/real-time-chat/internal/repository"
+	"github.com/go-chi/chi/v5"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -147,6 +149,16 @@ func TestCreateChannel(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
+			name: "User Does Not Exist",
+			setup: func(t *testing.T) (*handlers.Handler, func()) {
+				db := initializeTestDBWithChannels(t)
+				h := handlers.NewHandler(getMockLogger(), repository.New(db))
+				return h, func() { db.Close() }
+			},
+			payload:        map[string]interface{}{"name": "test", "description": testChannelDesc, "userId": int64(999)},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
 			name: "Channel Name Only (No Description)",
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDBWithChannels(t)
@@ -165,6 +177,16 @@ func TestCreateChannel(t *testing.T) {
 			},
 			payload:        map[string]interface{}{"name": "random", "userId": int64(1)},
 			expectedStatus: http.StatusCreated,
+		},
+		{
+			name: "User Does Not Exist",
+			setup: func(t *testing.T) (*handlers.Handler, func()) {
+				db := initializeTestDBWithChannels(t)
+				h := handlers.NewHandler(getMockLogger(), repository.New(db))
+				return h, func() { db.Close() }
+			},
+			payload:        map[string]interface{}{"name": "test", "description": testChannelDesc, "userId": int64(999)},
+			expectedStatus: http.StatusBadRequest,
 		},
 	}
 
@@ -237,6 +259,208 @@ func TestCreateChannelMissingUserID(t *testing.T) {
 
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf(expectedStatusErrMsg, http.StatusBadRequest, resp.StatusCode)
+	}
+}
+
+func TestDeleteChannel(t *testing.T) {
+	tests := []struct {
+		name           string
+		setup          func(t *testing.T) (*handlers.Handler, int64, int64, func())
+		channelID      string
+		userID         string
+		expectedStatus int
+	}{
+		{
+			name:           "Successful Deletion",
+			setup:          setupSuccessfulChannelDeletion,
+			channelID:      "1",
+			userID:         "1",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Channel Not Found",
+			setup:          setupChannelNotFound,
+			channelID:      "9999",
+			userID:         "1",
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name:           "User Not Owner",
+			setup:          setupUserNotOwner,
+			channelID:      "1",
+			userID:         "2",
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name:           "Invalid Channel ID",
+			setup:          setupBasicHandler,
+			channelID:      "invalid",
+			userID:         "1",
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "Invalid User ID",
+			setup:          setupBasicHandler,
+			channelID:      "1",
+			userID:         "invalid",
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "Missing Channel ID",
+			setup:          setupBasicHandler,
+			channelID:      "",
+			userID:         "1",
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "Missing User ID",
+			setup:          setupBasicHandler,
+			channelID:      "1",
+			userID:         "",
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			runDeleteChannelTest(t, tc.setup, tc.channelID, tc.userID, tc.expectedStatus, tc.name)
+		})
+	}
+}
+
+func setupSuccessfulChannelDeletion(t *testing.T) (*handlers.Handler, int64, int64, func()) {
+	db := initializeTestDBWithChannels(t)
+	queries := repository.New(db)
+
+	user, err := queries.CreateUser(context.Background(), repository.CreateUserParams{
+		Username: "channelowner",
+		Password: "password123",
+	})
+	if err != nil {
+		t.Fatalf(failedCreateTestUser, err)
+	}
+
+	channel, err := queries.CreateChannel(context.Background(), repository.CreateChannelParams{
+		Name:        "todelete",
+		Description: sql.NullString{String: "Channel to delete", Valid: true},
+		CreatedBy:   user.ID,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create test channel: %v", err)
+	}
+
+	h := handlers.NewHandler(getMockLogger(), queries)
+	return h, channel.ID, user.ID, func() { db.Close() }
+}
+
+func setupChannelNotFound(t *testing.T) (*handlers.Handler, int64, int64, func()) {
+	db := initializeTestDBWithChannels(t)
+	queries := repository.New(db)
+
+	user, err := queries.CreateUser(context.Background(), repository.CreateUserParams{
+		Username: "testuser",
+		Password: "password123",
+	})
+	if err != nil {
+		t.Fatalf(failedCreateTestUser, err)
+	}
+
+	h := handlers.NewHandler(getMockLogger(), queries)
+	return h, 9999, user.ID, func() { db.Close() }
+}
+
+func setupUserNotOwner(t *testing.T) (*handlers.Handler, int64, int64, func()) {
+	db := initializeTestDBWithChannels(t)
+	queries := repository.New(db)
+
+	owner, err := queries.CreateUser(context.Background(), repository.CreateUserParams{
+		Username: "channelowner",
+		Password: "password123",
+	})
+	if err != nil {
+		t.Fatalf(failedCreateTestUser, err)
+	}
+
+	notOwner, err := queries.CreateUser(context.Background(), repository.CreateUserParams{
+		Username: "notowner",
+		Password: "password123",
+	})
+	if err != nil {
+		t.Fatalf("Failed to create not-owner user: %v", err)
+	}
+
+	channel, err := queries.CreateChannel(context.Background(), repository.CreateChannelParams{
+		Name:        "ownedchannel",
+		Description: sql.NullString{String: "Channel owned by first user", Valid: true},
+		CreatedBy:   owner.ID,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create test channel: %v", err)
+	}
+
+	h := handlers.NewHandler(getMockLogger(), queries)
+	return h, channel.ID, notOwner.ID, func() { db.Close() }
+}
+
+func setupBasicHandler(t *testing.T) (*handlers.Handler, int64, int64, func()) {
+	db := initializeTestDBWithChannels(t)
+	h := handlers.NewHandler(getMockLogger(), repository.New(db))
+	return h, 0, 0, func() { db.Close() }
+}
+
+func runDeleteChannelTest(t *testing.T, setup func(t *testing.T) (*handlers.Handler, int64, int64, func()), channelID, userID string, expectedStatus int, testName string) {
+	h, actualChannelID, actualUserID, teardown := setup(t)
+	defer teardown()
+
+	finalChannelID := channelID
+	finalUserID := userID
+	if actualChannelID != 0 && testName == "Successful Deletion" {
+		finalChannelID = fmt.Sprintf("%d", actualChannelID)
+		finalUserID = fmt.Sprintf("%d", actualUserID)
+	}
+
+	req := httptest.NewRequest(http.MethodDelete, "/channels/"+finalChannelID+"/users/"+finalUserID, nil)
+
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("channelId", finalChannelID)
+	rctx.URLParams.Add("userId", finalUserID)
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	w := httptest.NewRecorder()
+	h.DeleteChannel(w, req)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+
+	if resp.StatusCode != expectedStatus {
+		t.Errorf(expectedStatusErrMsg, expectedStatus, resp.StatusCode)
+	}
+
+	if expectedStatus == http.StatusOK {
+		validateSuccessfulDeletion(t, w, resp)
+	}
+}
+
+func validateSuccessfulDeletion(t *testing.T, w *httptest.ResponseRecorder, resp *http.Response) {
+	if resp.Header.Get(headerContentType) != mimeApplicationJSON {
+		t.Errorf(contentTypeErrFmt, resp.Header.Get(headerContentType))
+	}
+	checkSuccessfulDeleteChannelResponse(t, w.Body)
+}
+
+func checkSuccessfulDeleteChannelResponse(t *testing.T, body *bytes.Buffer) {
+	t.Helper()
+	var response map[string]any
+	if err := json.NewDecoder(body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode delete response: %v", err)
+	}
+
+	if message, exists := response["message"]; !exists || message == "" {
+		t.Error("Expected response to have a non-empty 'message' field")
+	}
+
+	if channelID, exists := response["channelId"]; !exists || channelID == nil {
+		t.Error("Expected response to have a non-nil 'channelId' field")
 	}
 }
 
