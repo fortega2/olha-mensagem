@@ -15,7 +15,7 @@ const (
 	invalidRequestBodyErrMsg       = "Invalid request body"
 )
 
-type userCreateLoginDTO struct {
+type userCreateLoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
@@ -23,7 +23,7 @@ type userCreateLoginDTO struct {
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	failedToCreateUserErrMsg := "Failed to create user"
 
-	var req userCreateLoginDTO
+	var req userCreateLoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Error("Failed to decode request body", "error", err)
 		http.Error(w, invalidRequestBodyErrMsg, http.StatusBadRequest)
@@ -60,20 +60,13 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userDto := dto.NewUserDTO(user.ID, user.Username)
-
-	setContentTypeJSON(w)
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(userDto); err != nil {
-		h.logger.Error(failedEncodeuserDataErrMsg, "error", err)
-		http.Error(w, failedEncodeuserDataErrMsg, http.StatusInternalServerError)
-		return
-	}
+	respondWithJSON(w, http.StatusCreated, userDto, failedEncodeuserDataErrMsg)
 
 	h.logger.Info("User created successfully", "userID", user.ID, "username", user.Username)
 }
 
 func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
-	var req userCreateLoginDTO
+	var req userCreateLoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Error("Failed to decode request body", "error", err)
 		http.Error(w, invalidRequestBodyErrMsg, http.StatusBadRequest)
@@ -104,16 +97,7 @@ func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userDto := dto.NewUserDTO(user.ID, user.Username)
-	setContentTypeJSON(w)
-	if err := json.NewEncoder(w).Encode(userDto); err != nil {
-		h.logger.Error(failedEncodeuserDataErrMsg, "error", err)
-		http.Error(w, failedEncodeuserDataErrMsg, http.StatusInternalServerError)
-		return
-	}
+	respondWithJSON(w, http.StatusOK, userDto, failedEncodeuserDataErrMsg)
 
 	h.logger.Info("User logged in successfully", "username", user.Username, "userID", user.ID)
-}
-
-func setContentTypeJSON(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
 }
