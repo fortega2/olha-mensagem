@@ -14,6 +14,7 @@ const (
 	expectedUsernameErrMsg = "Expected username %s, got %s"
 	expectedColorErrMsg    = "Expected color %s, got %s"
 	testNotification       = "test notification"
+	channelID              = 1
 )
 
 func TestNewChatMessage(t *testing.T) {
@@ -21,7 +22,7 @@ func TestNewChatMessage(t *testing.T) {
 	content := "Hello, world!"
 	typeMsg := "Chat"
 
-	message := websocket.NewChatMessage(user, typeMsg, content)
+	message := websocket.NewChatMessage(user, typeMsg, content, channelID)
 
 	if message.Type != typeMsg {
 		t.Errorf(expectedTypeErrMsg, typeMsg, message.Type)
@@ -54,7 +55,7 @@ func TestNewChatMessage(t *testing.T) {
 func TestNewNotificationMessage(t *testing.T) {
 	content := "User joined the chat"
 
-	message := websocket.NewNotificationMessage(content)
+	message := websocket.NewNotificationMessage(content, channelID)
 
 	if message.Type != "Notification" {
 		t.Errorf("Expected type 'Notification', got %s", message.Type)
@@ -83,7 +84,7 @@ func TestNewNotificationMessage(t *testing.T) {
 
 func TestMessageJSONMarshaling(t *testing.T) {
 	user := websocket.NewUser(123, "jsonuser")
-	message := websocket.NewChatMessage(user, "Chat", "test content")
+	message := websocket.NewChatMessage(user, "Chat", "test content", channelID)
 
 	jsonData, err := json.Marshal(message)
 	if err != nil {
@@ -110,7 +111,7 @@ func TestMessageJSONMarshaling(t *testing.T) {
 }
 
 func TestNotificationMessageJSONMarshaling(t *testing.T) {
-	message := websocket.NewNotificationMessage(testNotification)
+	message := websocket.NewNotificationMessage(testNotification, channelID)
 
 	jsonData, err := json.Marshal(message)
 	if err != nil {

@@ -9,10 +9,11 @@ import (
 )
 
 type Client struct {
-	hub  *Hub
-	conn *websocket.Conn
-	send chan []byte
-	user *User
+	hub       *Hub
+	conn      *websocket.Conn
+	send      chan []byte
+	user      *User
+	ChannelID int
 }
 
 const (
@@ -22,12 +23,13 @@ const (
 	pingPeriod     = (writeWait * 9) / 10
 )
 
-func newClient(hub *Hub, conn *websocket.Conn, user *User) *Client {
+func newClient(hub *Hub, conn *websocket.Conn, user *User, channelID int) *Client {
 	return &Client{
-		hub:  hub,
-		conn: conn,
-		send: make(chan []byte, 256),
-		user: user,
+		hub:       hub,
+		conn:      conn,
+		send:      make(chan []byte, 256),
+		user:      user,
+		ChannelID: channelID,
 	}
 }
 
@@ -60,7 +62,7 @@ func (c *Client) readClientMessages() {
 			continue
 		}
 
-		message := NewChatMessage(c.user, chatType, content)
+		message := NewChatMessage(c.user, chatType, content, c.ChannelID)
 		jsonMsg, err := json.Marshal(message)
 		if err != nil {
 			c.hub.logger.Error("Failed to marshal message", "error", err, "user", c.user)
