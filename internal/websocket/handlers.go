@@ -39,15 +39,17 @@ func NewWebsocketHandler(l logger.Logger, q *repository.Queries) *WebsocketHandl
 }
 
 func (wh *WebsocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-	userIdStr := chi.URLParam(r, "userId")
-	userId, err := strconv.Atoi(userIdStr)
-	if err != nil {
-		wh.logger.Error("Invalid user ID", "error", err)
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+	userId, ok := wh.getUserIDFromRequest(r, w)
+	if !ok {
 		return
 	}
 
-	wh.logger.Info("WebSocket connection attempt", "userID", userId)
+	channelId, ok := wh.getChannelIDFromRequest(r, w)
+	if !ok {
+		return
+	}
+
+	wh.logger.Info("WebSocket connection attempt", "channelID", channelId, "userID", userId)
 
 	dbUser, err := wh.queries.GetUserByID(r.Context(), int64(userId))
 	if err != nil {
@@ -55,8 +57,6 @@ func (wh *WebsocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
-
-	wh.logger.Debug("User found. Attempting to upgrade to WebSocket", "userID", userId, "username", dbUser.Username)
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -68,14 +68,34 @@ func (wh *WebsocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reque
 	wh.logger.Info("WebSocket connection established", "userID", userId, "username", dbUser.Username)
 
 	user := NewUser(int(dbUser.ID), dbUser.Username)
-	client := newClient(hub, conn, user)
-
-	wh.logger.Debug("Registering new client to hub", "user", user)
+	client := newClient(hub, conn, user, channelId)
 
 	client.hub.register <- client
 
 	go client.writeClientMessages()
 	go client.readClientMessages()
+}
+
+func (wh *WebsocketHandler) getUserIDFromRequest(r *http.Request, w http.ResponseWriter) (int, bool) {
+	userIdStr := chi.URLParam(r, "userId")
+	userId, err := strconv.Atoi(userIdStr)
+	if err != nil {
+		wh.logger.Error("Invalid user ID", "error", err)
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return 0, false
+	}
+	return userId, true
+}
+
+func (wh *WebsocketHandler) getChannelIDFromRequest(r *http.Request, w http.ResponseWriter) (int, bool) {
+	channelIdStr := chi.URLParam(r, "channelId")
+	channelId, err := strconv.Atoi(channelIdStr)
+	if err != nil {
+		wh.logger.Error("Invalid channel ID", "error", err)
+		http.Error(w, "Invalid channel ID", http.StatusBadRequest)
+		return 0, false
+	}
+	return channelId, true
 }
 
 func Shutdown() {

@@ -13,10 +13,22 @@ type Hub struct {
 	logger       logger.Logger
 	clients      map[*Client]struct{}
 	broadcast    chan []byte
-	notification chan string
+	notification chan Notification
 	register     chan *Client
 	unregister   chan *Client
 	shutdown     chan struct{}
+}
+
+type Notification struct {
+	message   string
+	channelID int
+}
+
+func NewNotification(message string, channelID int) Notification {
+	return Notification{
+		message:   message,
+		channelID: channelID,
+	}
 }
 
 func NewHub(l logger.Logger) *Hub {
@@ -24,7 +36,7 @@ func NewHub(l logger.Logger) *Hub {
 		logger:       l,
 		clients:      make(map[*Client]struct{}),
 		broadcast:    make(chan []byte),
-		notification: make(chan string, notificationBuffer),
+		notification: make(chan Notification, notificationBuffer),
 		register:     make(chan *Client),
 		unregister:   make(chan *Client),
 		shutdown:     make(chan struct{}),
@@ -37,13 +49,13 @@ func (h *Hub) Run() {
 		case client := <-h.register:
 			h.clients[client] = struct{}{}
 			h.logger.Debug("Client registered", "user", client.user, "total_clients", len(h.clients))
-			h.notification <- fmt.Sprintf("%s has joined the chat", client.user.Username)
+			h.notification <- NewNotification(fmt.Sprintf("%s has joined the chat", client.user.Username), client.ChannelID)
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				close(client.send)
 				h.logger.Debug("Client unregistered", "user", client.user, "total_clients", len(h.clients))
-				h.notification <- fmt.Sprintf("%s has left the chat", client.user.Username)
+				h.notification <- NewNotification(fmt.Sprintf("%s has left the chat", client.user.Username), client.ChannelID)
 			}
 		case message := <-h.broadcast:
 			for client := range h.clients {
@@ -76,14 +88,14 @@ func (h *Hub) Shutdown() {
 	close(h.unregister)
 }
 
-func (h *Hub) sendNotificationMessage(message string) {
-	notificationMsg := NewNotificationMessage(message)
+func (h *Hub) sendNotificationMessage(note Notification) {
+	notificationMsg := NewNotificationMessage(note.message, note.channelID)
 	jsonMsg, err := json.Marshal(notificationMsg)
 	if err != nil {
 		h.logger.Error("Failed to marshal notification message", "error", err)
 		return
 	}
 
-	h.logger.Debug("Sending notification message", "message", message)
+	h.logger.Debug("Sending notification message", "message", note.message, "channelID", note.channelID)
 	h.broadcast <- jsonMsg
 }

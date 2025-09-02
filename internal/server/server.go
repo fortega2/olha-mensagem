@@ -82,7 +82,12 @@ func (s *Server) setRoutes(r *chi.Mux) {
 			r.Post("/", handlers.CreateUser)
 		})
 
-		r.Get("/ws/{userId}", wsHandler.HandleWebSocket)
+		r.Route("/channels", func(r chi.Router) {
+			r.Get("/", handlers.GetAllChannels)
+			r.Post("/", handlers.CreateChannel)
+		})
+
+		r.Get("/ws/{channelId}/{userId}", wsHandler.HandleWebSocket)
 	})
 
 	r.Mount("/", s.serveStaticFiles())

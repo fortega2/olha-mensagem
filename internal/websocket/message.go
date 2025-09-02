@@ -14,9 +14,10 @@ type Message struct {
 	Content   string `json:"content"`
 	Timestamp string `json:"timestamp"`
 	Color     string `json:"color"`
+	ChannelID int    `json:"channelId"`
 }
 
-func NewChatMessage(user *User, typeMsg, content string) Message {
+func NewChatMessage(user *User, typeMsg, content string, channelID int) Message {
 	return Message{
 		Type:      typeMsg,
 		UserID:    &user.ID,
@@ -24,14 +25,16 @@ func NewChatMessage(user *User, typeMsg, content string) Message {
 		Content:   content,
 		Timestamp: time.Now().Format(time.RFC3339),
 		Color:     user.Color,
+		ChannelID: channelID,
 	}
 }
 
-func NewNotificationMessage(content string) Message {
+func NewNotificationMessage(content string, channelID int) Message {
 	return Message{
 		Type:      notificationType,
 		Content:   content,
 		Timestamp: time.Now().Format(time.RFC3339),
 		Color:     "#666666",
+		ChannelID: channelID,
 	}
 }
