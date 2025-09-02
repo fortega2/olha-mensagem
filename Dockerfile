@@ -2,7 +2,7 @@ ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
 FROM --platform=$BUILDPLATFORM oven/bun:1.2.20-alpine AS frontend
-WORKDIR /app/internal/frontend/olha-mensagem-app
+WORKDIR /olha-mensagem-app/internal/frontend/olha-mensagem-app
 COPY internal/frontend/olha-mensagem-app/package.json \
     internal/frontend/olha-mensagem-app/bun.lock \
     internal/frontend/olha-mensagem-app/svelte.config.js \
@@ -21,7 +21,7 @@ RUN apk add --no-cache build-base sqlite-dev
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod go mod download
 COPY . .
-COPY --from=frontend /app/internal/frontend/olha-mensagem-app/build internal/frontend/olha-mensagem-app/build
+COPY --from=frontend /olha-mensagem-app/internal/frontend/olha-mensagem-app/build internal/frontend/olha-mensagem-app/build
 ENV CGO_ENABLED=1
 RUN --mount=type=cache,target=/root/.cache/go-build \
     go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/main ./cmd/real-time-chat
@@ -29,13 +29,14 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 FROM alpine:3.22
 RUN apk add --no-cache ca-certificates sqlite-libs tzdata \
     && addgroup -S app && adduser -S -G app app \
-    && mkdir -p /app/data && chown app:app /app/data
-WORKDIR /app
-COPY --from=builder /out/main /app/main
-COPY internal/database/migrations /app/internal/database/migrations
+    && mkdir -p /olha-mensagem-app/internal/database && chown -R app:app /olha-mensagem-app/internal/database
+WORKDIR /olha-mensagem-app
+COPY --from=builder /out/main /olha-mensagem-app/main
+COPY internal/database/migrations /olha-mensagem-app/internal/database/migrations
 ENV PORT=8080 \
-    DB_NAME=/app/data/olha_mensagem.db \
-    DB_MIGRATIONS_PATH=/app/internal/database/migrations
+    DB_NAME=/olha-mensagem-app/internal/database/olha_mensagem.db \
+    DB_MIGRATIONS_PATH=/olha-mensagem-app/internal/database/migrations \
+    LOG_LEVEL=INFO
 EXPOSE 8080
 USER app
-CMD ["/app/main"]
+CMD ["/olha-mensagem-app/main"]
