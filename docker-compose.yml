@@ -7,10 +7,11 @@ services:
     container_name: olha-mensagem-app
     environment:
       PORT: 8080
-      DB_NAME: /app/data/olha_mensagem.db
-      DB_MIGRATIONS_PATH: /app/internal/database/migrations
+      DB_NAME: /olha-mensagem-app/internal/database/olha_mensagem.db
+      DB_MIGRATIONS_PATH: /olha-mensagem-app/internal/database/migrations
+      LOG_LEVEL: INFO
     volumes:
-      - olha-mensagem-db-data:/app/data
+      - olha-mensagem-db-data:/olha-mensagem-app/internal/database
     ports:
       - "8080:8080"
     restart: unless-stopped
