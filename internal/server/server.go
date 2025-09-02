@@ -85,6 +85,7 @@ func (s *Server) setRoutes(r *chi.Mux) {
 		r.Route("/channels", func(r chi.Router) {
 			r.Get("/", handlers.GetAllChannels)
 			r.Post("/", handlers.CreateChannel)
+			r.Delete("/{channelId}/users/{userId}", handlers.DeleteChannel)
 		})
 
 		r.Get("/ws/{channelId}/{userId}", wsHandler.HandleWebSocket)
