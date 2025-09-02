@@ -5,8 +5,17 @@
 package repository
 
 import (
+	"database/sql"
 	"time"
 )
+
+type Channel struct {
+	ID          int64
+	Name        string
+	Description sql.NullString
+	CreatedBy   int64
+	CreatedAt   time.Time
+}
 
 type User struct {
 	ID        int64
