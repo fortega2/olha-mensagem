@@ -4,11 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/fortega2/real-time-chat/internal/repository"
-	"github.com/go-chi/chi/v5"
 )
 
 const (
@@ -18,10 +16,11 @@ const (
 type createChannelRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	UserID      int64  `json:"userId"`
 }
 
 func (ccr createChannelRequest) isValid() bool {
-	return ccr.Name != ""
+	return ccr.Name != "" && ccr.UserID != 0
 }
 
 type channelResponse struct {
@@ -99,21 +98,7 @@ func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDStr := chi.URLParam(r, "userID")
-	if userIDStr == "" {
-		h.logger.Error("User ID not provided in URL")
-		http.Error(w, "User ID is required", http.StatusBadRequest)
-		return
-	}
-
-	h.logger.Debug("Create channel attempt", "name", req.Name, "description", req.Description, "userID", userIDStr)
-
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		h.logger.Error("Invalid user ID format", "error", err)
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
-		return
-	}
+	h.logger.Debug("Create channel attempt", "name", req.Name, "description", req.Description, "userID", req.UserID)
 
 	createChannelParams := repository.CreateChannelParams{
 		Name: req.Name,
@@ -121,7 +106,7 @@ func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 			String: req.Description,
 			Valid:  req.Description != "",
 		},
-		CreatedBy: userID,
+		CreatedBy: req.UserID,
 	}
 
 	channel, err := h.queries.CreateChannel(ctx, createChannelParams)
