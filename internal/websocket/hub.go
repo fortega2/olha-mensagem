@@ -58,14 +58,7 @@ func (h *Hub) Run() {
 				h.notification <- NewNotification(fmt.Sprintf("%s has left the chat", client.user.Username), client.ChannelID)
 			}
 		case message := <-h.broadcast:
-			for client := range h.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(h.clients, client)
-				}
-			}
+			h.broadcastToChannel(message)
 		case note := <-h.notification:
 			go h.sendNotificationMessage(note)
 		case <-h.shutdown:
@@ -86,6 +79,25 @@ func (h *Hub) Shutdown() {
 	close(h.broadcast)
 	close(h.register)
 	close(h.unregister)
+}
+
+func (h *Hub) broadcastToChannel(message []byte) {
+	var msg Message
+	if err := json.Unmarshal(message, &msg); err != nil {
+		h.logger.Error("Failed to unmarshal message for channel filtering", "error", err)
+		return
+	}
+
+	for client := range h.clients {
+		if client.ChannelID == msg.ChannelID {
+			select {
+			case client.send <- message:
+			default:
+				close(client.send)
+				delete(h.clients, client)
+			}
+		}
+	}
 }
 
 func (h *Hub) sendNotificationMessage(note Notification) {
