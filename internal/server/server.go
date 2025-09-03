@@ -4,8 +4,6 @@ import (
 	"context"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/fortega2/real-time-chat/internal/handlers"
@@ -34,33 +32,34 @@ func (s *Server) Start() error {
 		port = ":8080"
 	}
 
-	server := &http.Server{
+	s.server = &http.Server{
 		Addr:    port,
 		Handler: r,
 	}
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	s.logger.Info("Starting server on port " + port)
 
-	go func() {
-		s.logger.Info("Starting server on port " + port)
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			s.logger.Fatal("Failed to start listening the server", "error", err)
-		}
-	}()
+	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		return err
+	}
 
-	<-quit
+	return nil
+}
 
-	websocket.Shutdown()
+func (s *Server) Shutdown() error {
+	if s.server == nil {
+		return nil
+	}
+
+	s.logger.Info("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	s.logger.Info("Shutting down server...")
-	if err := server.Shutdown(ctx); err != nil {
+	if err := s.server.Shutdown(ctx); err != nil {
 		s.logger.Error("Failed to gracefully shutdown server. Trying to close the server...", "error", err)
-		if closeErr := server.Close(); closeErr != nil {
-			s.logger.Fatal("Failed to close server", "error", closeErr)
+		if closeErr := s.server.Close(); closeErr != nil {
+			return closeErr
 		}
 	}
 

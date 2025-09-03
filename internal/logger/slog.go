@@ -3,6 +3,8 @@ package logger
 import (
 	"log/slog"
 	"os"
+
+	"github.com/fortega2/real-time-chat/internal/shutdown"
 )
 
 type slogLogger struct {
@@ -19,11 +21,13 @@ const (
 func NewSlogLogger() Logger {
 	logLevel := getLevelInfo(os.Getenv("LOG_LEVEL"))
 
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: logLevel,
 	}))
 
-	return &slogLogger{l: logger}
+	return &slogLogger{
+		l: logger,
+	}
 }
 
 func (s *slogLogger) Debug(msg string, args ...any) {
@@ -44,7 +48,7 @@ func (s *slogLogger) Error(msg string, args ...any) {
 
 func (s *slogLogger) Fatal(msg string, args ...any) {
 	s.l.Error(msg, args...)
-	os.Exit(1)
+	shutdown.Signal()
 }
 
 func (s *slogLogger) With(args ...any) Logger {

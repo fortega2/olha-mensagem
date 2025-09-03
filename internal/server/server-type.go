@@ -1,6 +1,8 @@
 package server
 
 import (
+	"net/http"
+
 	"github.com/fortega2/real-time-chat/internal/logger"
 	"github.com/fortega2/real-time-chat/internal/repository"
 )
@@ -8,4 +10,5 @@ import (
 type Server struct {
 	logger  logger.Logger
 	queries *repository.Queries
+	server  *http.Server
 }

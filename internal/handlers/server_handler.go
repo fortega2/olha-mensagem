@@ -21,8 +21,6 @@ type userCreateLoginRequest struct {
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	failedToCreateUserErrMsg := "Failed to create user"
-
 	var req userCreateLoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Error("Failed to decode request body", "error", err)
@@ -40,8 +38,8 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		h.logger.Error("Failed to hash password", "error", err)
-		http.Error(w, failedToCreateUserErrMsg, http.StatusInternalServerError)
+		h.logger.Error("Failed to hash password", "error", err, "username", req.Username)
+		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
 		return
 	}
 
@@ -54,8 +52,8 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.queries.CreateUser(r.Context(), params)
 	if err != nil {
-		h.logger.Error(failedToCreateUserErrMsg, "error", err)
-		http.Error(w, failedToCreateUserErrMsg, http.StatusInternalServerError)
+		h.logger.Error("Failed to create user", "error", err, "username", req.Username)
+		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
 	}
 
@@ -83,7 +81,7 @@ func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.queries.GetUserByUsername(r.Context(), req.Username)
 	if err != nil {
-		h.logger.Error("Failed to retrieve user", "error", err)
+		h.logger.Error("Failed to retrieve user", "error", err, "username", req.Username)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}

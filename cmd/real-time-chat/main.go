@@ -2,11 +2,15 @@ package main
 
 import (
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/fortega2/real-time-chat/internal/database"
 	"github.com/fortega2/real-time-chat/internal/logger"
 	"github.com/fortega2/real-time-chat/internal/repository"
 	"github.com/fortega2/real-time-chat/internal/server"
+	"github.com/fortega2/real-time-chat/internal/shutdown"
+	"github.com/fortega2/real-time-chat/internal/websocket"
 	"github.com/joho/godotenv"
 )
 
@@ -36,7 +40,37 @@ func main() {
 	queries := repository.New(db.GetDB())
 	srv := server.NewServer(logger, queries)
 
-	if err := srv.Start(); err != nil {
-		logger.Fatal("Failed to start server", "error", err)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		if err := srv.Start(); err != nil {
+			logger.Fatal("Failed to start server", "error", err)
+		}
+	}()
+
+	awaitShutdownSignal(sigChan, logger, srv)
+}
+
+func awaitShutdownSignal(sigChan <-chan os.Signal, logger logger.Logger, srv *server.Server) {
+	select {
+	case <-shutdown.Wait():
+		logger.Info("Shutdown signal received from internal package")
+	case sig := <-sigChan:
+		logger.Info("Shutdown signal received", "signal", sig)
 	}
+
+	performCleanup(logger, srv)
+}
+
+func performCleanup(logger logger.Logger, srv *server.Server) {
+	logger.Info("Starting cleanup process...")
+
+	websocket.Shutdown()
+
+	if err := srv.Shutdown(); err != nil {
+		logger.Error("Failed to shutdown server", "error", err)
+	}
+
+	logger.Info("Cleanup completed")
 }
