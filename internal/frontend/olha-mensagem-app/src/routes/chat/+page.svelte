@@ -159,9 +159,7 @@
 						{#if m.type === 'Chat'}
 							<div class="group">
 								<div class="flex items-baseline gap-2">
-									<span class="font-semibold" style={`color:${m.color}`}
-										>#{m.userId} {m.username}</span
-									>
+									<span class="font-semibold" style={`color:${m.color}`}>{m.username}</span>
 									<span class="text-[10px] text-gray-400">{formatTime(m.timestamp)}</span>
 								</div>
 								<div class="mt-0.5 pl-1 break-words whitespace-pre-wrap">

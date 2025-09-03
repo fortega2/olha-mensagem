@@ -10,16 +10,16 @@ import (
 )
 
 type Channel struct {
-	ID          int64
-	Name        string
-	Description sql.NullString
-	CreatedBy   int64
-	CreatedAt   time.Time
+	ID          int64          `json:"id"`
+	Name        string         `json:"name"`
+	Description sql.NullString `json:"description"`
+	CreatedBy   int64          `json:"createdBy"`
+	CreatedAt   time.Time      `json:"createdAt"`
 }
 
 type User struct {
-	ID        int64
-	Username  string
-	Password  string
-	CreatedAt time.Time
+	ID        int64     `json:"id"`
+	Username  string    `json:"username"`
+	Password  string    `json:"password"`
+	CreatedAt time.Time `json:"createdAt"`
 }

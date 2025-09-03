@@ -66,7 +66,7 @@
 				userId: Number(user.id)
 			});
 
-			channels = [newChannel, ...channels].sort((a, b) => b.id - a.id);
+			channels = [newChannel, ...channels];
 			newChannelName = '';
 			newChannelDescription = '';
 			showCreateForm = false;
@@ -163,7 +163,7 @@
 							<Input
 								id="channelName"
 								bind:value={newChannelName}
-								placeholder="Ej: general, desarrollo, random..."
+								placeholder="Ej: General"
 								required
 								disabled={creating}
 							/>
@@ -173,7 +173,7 @@
 							<Input
 								id="channelDescription"
 								bind:value={newChannelDescription}
-								placeholder="Descripción del canal..."
+								placeholder="General channel for all topics"
 								disabled={creating}
 							/>
 						</div>
@@ -229,7 +229,7 @@
 								</div>
 								<div class="flex items-center gap-2">
 									<User size={14} />
-									<span>Creator ID: {channel.createdBy}</span>
+									<span>Creator: {channel.createdByUsername}</span>
 								</div>
 							</div>
 

@@ -224,7 +224,7 @@ func runGetAllChannelsTest(t *testing.T, setup func(t *testing.T) (*repository.Q
 	validateChannelOrdering(t, channels)
 }
 
-func validateChannelOrdering(t *testing.T, channels []repository.Channel) {
+func validateChannelOrdering(t *testing.T, channels []repository.GetAllChannelsRow) {
 	if len(channels) <= 1 {
 		return
 	}

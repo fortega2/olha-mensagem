@@ -1,7 +1,17 @@
 -- name: GetAllChannels :many
-SELECT *
-FROM channels
-ORDER BY created_at DESC;
+SELECT
+    c.id,
+    c.name,
+    c.description,
+    c.created_by,
+    u.username AS created_by_username,
+    c.created_at
+FROM
+    channels AS c
+INNER JOIN
+    users AS u ON u.id = c.created_by
+ORDER BY
+    c.id DESC;
 
 -- name: GetChannelByID :one
 SELECT *

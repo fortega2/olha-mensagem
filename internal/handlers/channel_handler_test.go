@@ -185,7 +185,7 @@ func TestCreateChannel(t *testing.T) {
 				h := handlers.NewHandler(getMockLogger(), repository.New(db))
 				return h, func() { db.Close() }
 			},
-			payload:        map[string]interface{}{"name": "test", "description": testChannelDesc, "userId": int64(999)},
+			payload:        map[string]any{"name": "test", "description": testChannelDesc, "userId": int64(999)},
 			expectedStatus: http.StatusBadRequest,
 		},
 	}
@@ -214,7 +214,7 @@ func TestCreateChannel(t *testing.T) {
 				if resp.Header.Get(headerContentType) != mimeApplicationJSON {
 					t.Errorf(contentTypeErrFmt, resp.Header.Get(headerContentType))
 				}
-				checkSuccessfulCreateChannelResponse(t, w.Body, tc.payload.(map[string]interface{}))
+				checkSuccessfulCreateChannelResponse(t, w.Body, tc.payload.(map[string]any))
 			}
 		})
 	}

@@ -3,6 +3,7 @@ export type Channel = {
 	name: string;
 	description: string | null;
 	createdBy: number;
+	createdByUsername: string;
 	createdAt: string;
 };
 

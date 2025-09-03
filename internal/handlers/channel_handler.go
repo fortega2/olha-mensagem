@@ -30,11 +30,12 @@ func (ccr createChannelRequest) isValid() bool {
 }
 
 type channelResponse struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	CreatedBy   int64  `json:"createdBy"`
-	CreatedAt   string `json:"createdAt"`
+	ID                int64  `json:"id"`
+	Name              string `json:"name"`
+	Description       string `json:"description"`
+	CreatedBy         int64  `json:"createdBy"`
+	CreatedByUsername string `json:"createdByUsername,omitempty"`
+	CreatedAt         string `json:"createdAt"`
 }
 
 type deleteChannelResponse struct {
@@ -42,20 +43,35 @@ type deleteChannelResponse struct {
 	ChannelID int64  `json:"channelId"`
 }
 
-func newChannelResponse(channel repository.Channel) channelResponse {
-	var description string
-	if channel.Description.Valid {
-		description = channel.Description.String
-	} else {
-		description = ""
+func newChannelResponse[T repository.Channel | repository.GetAllChannelsRow](channel T) channelResponse {
+	setDescription := func(description sql.NullString) string {
+		if description.Valid {
+			return description.String
+		} else {
+			return ""
+		}
 	}
 
-	return channelResponse{
-		ID:          channel.ID,
-		Name:        channel.Name,
-		Description: description,
-		CreatedBy:   channel.CreatedBy,
-		CreatedAt:   channel.CreatedAt.Format(time.RFC3339),
+	switch v := any(channel).(type) {
+	case repository.Channel:
+		return channelResponse{
+			ID:          v.ID,
+			Name:        v.Name,
+			Description: setDescription(v.Description),
+			CreatedBy:   v.CreatedBy,
+			CreatedAt:   v.CreatedAt.Format(time.RFC3339),
+		}
+	case repository.GetAllChannelsRow:
+		return channelResponse{
+			ID:                v.ID,
+			Name:              v.Name,
+			Description:       setDescription(v.Description),
+			CreatedBy:         v.CreatedBy,
+			CreatedByUsername: v.CreatedByUsername,
+			CreatedAt:         v.CreatedAt.Format(time.RFC3339),
+		}
+	default:
+		return channelResponse{}
 	}
 }
 

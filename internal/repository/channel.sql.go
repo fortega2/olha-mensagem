@@ -8,6 +8,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const createChannel = `-- name: CreateChannel :one
@@ -17,9 +18,9 @@ RETURNING id, name, description, created_by, created_at
 `
 
 type CreateChannelParams struct {
-	Name        string
-	Description sql.NullString
-	CreatedBy   int64
+	Name        string         `json:"name"`
+	Description sql.NullString `json:"description"`
+	CreatedBy   int64          `json:"createdBy"`
 }
 
 func (q *Queries) CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error) {
@@ -41,8 +42,8 @@ WHERE id = ? AND created_by = ?
 `
 
 type DeleteChannelParams struct {
-	ID        int64
-	CreatedBy int64
+	ID        int64 `json:"id"`
+	CreatedBy int64 `json:"createdBy"`
 }
 
 func (q *Queries) DeleteChannel(ctx context.Context, arg DeleteChannelParams) error {
@@ -51,25 +52,45 @@ func (q *Queries) DeleteChannel(ctx context.Context, arg DeleteChannelParams) er
 }
 
 const getAllChannels = `-- name: GetAllChannels :many
-SELECT id, name, description, created_by, created_at
-FROM channels
-ORDER BY created_at DESC
+SELECT
+    c.id,
+    c.name,
+    c.description,
+    c.created_by,
+    u.username AS created_by_username,
+    c.created_at
+FROM
+    channels AS c
+INNER JOIN
+    users AS u ON u.id = c.created_by
+ORDER BY
+    c.id DESC
 `
 
-func (q *Queries) GetAllChannels(ctx context.Context) ([]Channel, error) {
+type GetAllChannelsRow struct {
+	ID                int64          `json:"id"`
+	Name              string         `json:"name"`
+	Description       sql.NullString `json:"description"`
+	CreatedBy         int64          `json:"createdBy"`
+	CreatedByUsername string         `json:"createdByUsername"`
+	CreatedAt         time.Time      `json:"createdAt"`
+}
+
+func (q *Queries) GetAllChannels(ctx context.Context) ([]GetAllChannelsRow, error) {
 	rows, err := q.query(ctx, q.getAllChannelsStmt, getAllChannels)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Channel
+	var items []GetAllChannelsRow
 	for rows.Next() {
-		var i Channel
+		var i GetAllChannelsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
 			&i.Description,
 			&i.CreatedBy,
+			&i.CreatedByUsername,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
