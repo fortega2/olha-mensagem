@@ -3,15 +3,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: fortega21/olha-mensagem-app:latest
+    image: olha-mensagem-app:latest
     container_name: olha-mensagem-app
     environment:
       PORT: 8080
-      DB_NAME: /olha-mensagem-app/internal/database/olha_mensagem.db
+      DB_NAME: /olha-mensagem-app/data/olha_mensagem.db
       DB_MIGRATIONS_PATH: /olha-mensagem-app/internal/database/migrations
       LOG_LEVEL: INFO
     volumes:
-      - olha-mensagem-db-data:/olha-mensagem-app/internal/database
+      - olha-mensagem-db-data:/olha-mensagem-app/data
     ports:
       - "8080:8080"
     restart: unless-stopped
