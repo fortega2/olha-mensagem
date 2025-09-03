@@ -6,7 +6,7 @@
 		if (!sessionStorage.getItem('user')) {
 			goto('/login');
 		} else {
-			goto('/chat');
+			goto('/channels');
 		}
 	});
 </script>

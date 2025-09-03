@@ -11,10 +11,13 @@
 	import type { UserDto } from '$lib/types/user.types';
 	import type { ChatMessage } from '$lib/types/websocket.types';
 	import { wsUrl } from '$lib/config';
+	import type { Channel } from '$lib/types/channel';
+	import { ArrowLeft } from '@lucide/svelte';
 
 	let ws: WebSocket | null = null;
 
 	let user = $state<UserDto | null>(null);
+	let selectedChannel = $state<Channel | null>(null);
 	let messages = $state<ChatMessage[]>([]);
 	let pendingMessage = $state('');
 	let connecting = $state(true);
@@ -25,18 +28,25 @@
 		if (typeof window === 'undefined') return;
 
 		try {
-			const stored = sessionStorage.getItem('user');
-			if (!stored) {
+			const storedUser = sessionStorage.getItem('user');
+			if (!storedUser) {
 				goto('/login');
 				return;
 			}
-			user = JSON.parse(stored) as UserDto;
+			user = JSON.parse(storedUser) as UserDto;
+
+			const storedChannel = sessionStorage.getItem('selectedChannel');
+			if (!storedChannel) {
+				goto('/channels');
+				return;
+			}
+			selectedChannel = JSON.parse(storedChannel) as Channel;
+
+			connectWebSocket();
 		} catch {
 			goto('/login');
 			return;
 		}
-
-		connectWebSocket();
 
 		return () => {
 			if (ws && ws.readyState === WebSocket.OPEN) {
@@ -52,18 +62,21 @@
 	});
 
 	const connectWebSocket = () => {
-		if (!user) return;
+		if (!user || !selectedChannel) return;
+
 		connecting = true;
-		ws = new WebSocket(wsUrl(Number(user.id)));
+		ws = new WebSocket(wsUrl(selectedChannel.id, Number(user.id)));
 
 		ws.onopen = () => {
 			connecting = false;
-			toast.info('Conectado');
+			toast.success(`Conectado al canal "${selectedChannel?.name}"`);
 		};
+
 		ws.onerror = (e) => {
 			toast.error('Error WebSocket');
 			console.error(e);
 		};
+
 		ws.onclose = (ev) => {
 			toast.info('Conexión cerrada');
 			if (ev.code !== 1000) {
@@ -73,6 +86,7 @@
 				}, 2000);
 			}
 		};
+
 		ws.onmessage = (evt: MessageEvent<string>) => {
 			try {
 				const msg: ChatMessage = JSON.parse(evt.data);
@@ -99,6 +113,10 @@
 		sendMessage();
 	};
 
+	const goBackToChannels = () => {
+		goto('/channels');
+	};
+
 	const formatTime = (ts: string) => {
 		try {
 			return new Date(ts).toLocaleTimeString();
@@ -112,7 +130,17 @@
 	<Card class="flex h-[80vh] w-full max-w-2xl flex-col">
 		<CardHeader class="pb-2">
 			<CardTitle class="flex items-center justify-between text-lg">
-				<span>Chat</span>
+				<div class="flex items-center gap-3">
+					<Button variant="ghost" size="sm" onclick={goBackToChannels}>
+						<ArrowLeft size={16} />
+					</Button>
+					<div>
+						<span class="text-lg font-semibold"># {selectedChannel?.name || 'Canal'}</span>
+						{#if selectedChannel?.description}
+							<p class="text-sm font-normal text-gray-600">{selectedChannel.description}</p>
+						{/if}
+					</div>
+				</div>
 			</CardTitle>
 		</CardHeader>
 		<CardContent class="flex flex-1 flex-col overflow-hidden pt-0">
@@ -123,7 +151,9 @@
 				{#if connecting}
 					<p class="text-gray-500 italic">Conectando...</p>
 				{:else if messages.length === 0}
-					<p class="text-gray-400 italic">Sin mensajes todavía.</p>
+					<p class="text-gray-400 italic">
+						No hay mensajes en #{selectedChannel?.name || 'este canal'} todavía.
+					</p>
 				{:else}
 					{#each messages as m (m.timestamp + (m.userId ?? 0))}
 						{#if m.type === 'Chat'}
@@ -150,13 +180,13 @@
 			<form class="mt-3 flex gap-2" onsubmit={handleSubmit}>
 				<Input
 					class="flex-1"
-					placeholder="Escribe un mensaje..."
+					placeholder={`Mensaje para #${selectedChannel?.name || 'canal'}...`}
 					bind:value={pendingMessage}
 					disabled={connecting}
 				/>
-				<Button type="submit" class="shrink-0" disabled={connecting || !pendingMessage.trim()}
-					>Enviar</Button
-				>
+				<Button type="submit" class="shrink-0" disabled={connecting || !pendingMessage.trim()}>
+					Enviar
+				</Button>
 			</form>
 		</CardContent>
 	</Card>

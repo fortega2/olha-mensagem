@@ -1,4 +1,5 @@
 export type MessageType = 'Chat' | 'Notification';
+
 export type ChatMessage = {
 	type: MessageType;
 	userId: number;
