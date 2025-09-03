@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: olha-mensagem-app:latest
+    image: fortega21/olha-mensagem-app:latest
     container_name: olha-mensagem-app
     environment:
       PORT: 8080
