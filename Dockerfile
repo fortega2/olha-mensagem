@@ -29,12 +29,12 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 FROM alpine:3.22
 RUN apk add --no-cache ca-certificates sqlite-libs tzdata \
     && addgroup -S app && adduser -S -G app app \
-    && mkdir -p /olha-mensagem-app/internal/database && chown -R app:app /olha-mensagem-app/internal/database
+    && mkdir -p /olha-mensagem-app/data && chown app:app /olha-mensagem-app/data
 WORKDIR /olha-mensagem-app
 COPY --from=builder /out/main /olha-mensagem-app/main
 COPY internal/database/migrations /olha-mensagem-app/internal/database/migrations
 ENV PORT=8080 \
-    DB_NAME=/olha-mensagem-app/internal/database/olha_mensagem.db \
+    DB_NAME=/olha-mensagem-app/data/olha_mensagem.db \
     DB_MIGRATIONS_PATH=/olha-mensagem-app/internal/database/migrations \
     LOG_LEVEL=INFO
 EXPOSE 8080
