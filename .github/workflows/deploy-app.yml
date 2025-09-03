@@ -17,7 +17,12 @@ jobs:
     runs-on: self-hosted
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-    - name: Deploy Application
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Update docker-compose
+      run: |
+        cp ${{ github.workspace }}/docker-compose.yml ${{ secrets.OLHA_MENSAGEM_DIRECTORY_VM }}/docker-compose.yml
+    - name: Run docker-compose
       run: |
         cd ${{ secrets.OLHA_MENSAGEM_DIRECTORY_VM }}
         docker compose pull
