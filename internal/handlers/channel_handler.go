@@ -34,7 +34,7 @@ type channelResponse struct {
 	Name              string `json:"name"`
 	Description       string `json:"description"`
 	CreatedBy         int64  `json:"createdBy"`
-	CreatedByUsername string `json:"createdByUsername,omitempty"`
+	CreatedByUsername string `json:"createdByUsername"`
 	CreatedAt         string `json:"createdAt"`
 }
 
@@ -43,7 +43,7 @@ type deleteChannelResponse struct {
 	ChannelID int64  `json:"channelId"`
 }
 
-func newChannelResponse[T repository.Channel | repository.GetAllChannelsRow](channel T) channelResponse {
+func newChannelResponse[T repository.GetChannelByIDRow | repository.GetAllChannelsRow](channel T) channelResponse {
 	setDescription := func(description sql.NullString) string {
 		if description.Valid {
 			return description.String
@@ -53,13 +53,14 @@ func newChannelResponse[T repository.Channel | repository.GetAllChannelsRow](cha
 	}
 
 	switch v := any(channel).(type) {
-	case repository.Channel:
+	case repository.GetChannelByIDRow:
 		return channelResponse{
-			ID:          v.ID,
-			Name:        v.Name,
-			Description: setDescription(v.Description),
-			CreatedBy:   v.CreatedBy,
-			CreatedAt:   v.CreatedAt.Format(time.RFC3339),
+			ID:                v.ID,
+			Name:              v.Name,
+			Description:       setDescription(v.Description),
+			CreatedBy:         v.CreatedBy,
+			CreatedByUsername: v.CreatedByUsername,
+			CreatedAt:         v.CreatedAt.Format(time.RFC3339),
 		}
 	case repository.GetAllChannelsRow:
 		return channelResponse{
@@ -143,23 +144,24 @@ func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 		CreatedBy: req.UserID,
 	}
 
-	channel, err := h.queries.CreateChannel(ctx, createChannelParams)
+	chId, err := h.queries.CreateChannel(ctx, createChannelParams)
 	if err != nil {
 		h.logger.Error("Failed to create channel", "error", err)
 		http.Error(w, "Failed to create channel", http.StatusInternalServerError)
 		return
 	}
 
+	channel, err := h.queries.GetChannelByID(ctx, chId)
+	if err != nil {
+		h.logger.Error("Failed to retrieve created channel", "channelID", chId, "error", err)
+		http.Error(w, "Failed to retrieve created channel", http.StatusInternalServerError)
+		return
+	}
+
 	response := newChannelResponse(channel)
 	respondWithJSON(w, http.StatusCreated, response, failedEncodeChannelDataErrMsg)
 
-	h.logger.Info(
-		"Channel created successfully",
-		"channelID", channel.ID,
-		"name", channel.Name,
-		"description", channel.Description,
-		"createdBy", channel.CreatedBy,
-	)
+	h.logger.Info("Channel created successfully", "channel", channel)
 }
 
 func (h *Handler) DeleteChannel(w http.ResponseWriter, r *http.Request) {

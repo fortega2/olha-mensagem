@@ -14,7 +14,7 @@ import (
 const createChannel = `-- name: CreateChannel :one
 INSERT INTO channels (name, description, created_by)
 VALUES (?, ?, ?)
-RETURNING id, name, description, created_by, created_at
+RETURNING id
 `
 
 type CreateChannelParams struct {
@@ -23,17 +23,11 @@ type CreateChannelParams struct {
 	CreatedBy   int64          `json:"createdBy"`
 }
 
-func (q *Queries) CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error) {
+func (q *Queries) CreateChannel(ctx context.Context, arg CreateChannelParams) (int64, error) {
 	row := q.queryRow(ctx, q.createChannelStmt, createChannel, arg.Name, arg.Description, arg.CreatedBy)
-	var i Channel
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.CreatedBy,
-		&i.CreatedAt,
-	)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const deleteChannel = `-- name: DeleteChannel :exec
@@ -107,19 +101,39 @@ func (q *Queries) GetAllChannels(ctx context.Context) ([]GetAllChannelsRow, erro
 }
 
 const getChannelByID = `-- name: GetChannelByID :one
-SELECT id, name, description, created_by, created_at
-FROM channels
-WHERE id = ?
+SELECT
+    c.id,
+    c.name,
+    c.description,
+    c.created_by,
+    u.username AS created_by_username,
+    c.created_at
+FROM
+    channels AS c
+INNER JOIN
+    users AS u ON u.id = c.created_by
+WHERE
+    c.id = ?
 `
 
-func (q *Queries) GetChannelByID(ctx context.Context, id int64) (Channel, error) {
+type GetChannelByIDRow struct {
+	ID                int64          `json:"id"`
+	Name              string         `json:"name"`
+	Description       sql.NullString `json:"description"`
+	CreatedBy         int64          `json:"createdBy"`
+	CreatedByUsername string         `json:"createdByUsername"`
+	CreatedAt         time.Time      `json:"createdAt"`
+}
+
+func (q *Queries) GetChannelByID(ctx context.Context, id int64) (GetChannelByIDRow, error) {
 	row := q.queryRow(ctx, q.getChannelByIDStmt, getChannelByID, id)
-	var i Channel
+	var i GetChannelByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.Description,
 		&i.CreatedBy,
+		&i.CreatedByUsername,
 		&i.CreatedAt,
 	)
 	return i, err

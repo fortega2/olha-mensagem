@@ -340,7 +340,7 @@ func setupSuccessfulChannelDeletion(t *testing.T) (*handlers.Handler, int64, int
 		t.Fatalf(failedCreateTestUser, err)
 	}
 
-	channel, err := queries.CreateChannel(context.Background(), repository.CreateChannelParams{
+	chId, err := queries.CreateChannel(context.Background(), repository.CreateChannelParams{
 		Name:        "todelete",
 		Description: sql.NullString{String: "Channel to delete", Valid: true},
 		CreatedBy:   user.ID,
@@ -350,7 +350,7 @@ func setupSuccessfulChannelDeletion(t *testing.T) (*handlers.Handler, int64, int
 	}
 
 	h := handlers.NewHandler(getMockLogger(), queries)
-	return h, channel.ID, user.ID, func() { db.Close() }
+	return h, chId, user.ID, func() { db.Close() }
 }
 
 func setupChannelNotFound(t *testing.T) (*handlers.Handler, int64, int64, func()) {
@@ -389,7 +389,7 @@ func setupUserNotOwner(t *testing.T) (*handlers.Handler, int64, int64, func()) {
 		t.Fatalf("Failed to create not-owner user: %v", err)
 	}
 
-	channel, err := queries.CreateChannel(context.Background(), repository.CreateChannelParams{
+	chId, err := queries.CreateChannel(context.Background(), repository.CreateChannelParams{
 		Name:        "ownedchannel",
 		Description: sql.NullString{String: "Channel owned by first user", Valid: true},
 		CreatedBy:   owner.ID,
@@ -399,7 +399,7 @@ func setupUserNotOwner(t *testing.T) (*handlers.Handler, int64, int64, func()) {
 	}
 
 	h := handlers.NewHandler(getMockLogger(), queries)
-	return h, channel.ID, notOwner.ID, func() { db.Close() }
+	return h, chId, notOwner.ID, func() { db.Close() }
 }
 
 func setupBasicHandler(t *testing.T) (*handlers.Handler, int64, int64, func()) {

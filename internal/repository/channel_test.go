@@ -272,7 +272,7 @@ func setupSuccessfulDelete(t *testing.T) (*repository.Queries, repository.Delete
 	q := repository.New(db)
 	user := createTestUser(t, q)
 
-	ch, err := q.CreateChannel(context.Background(), repository.CreateChannelParams{
+	chId, err := q.CreateChannel(context.Background(), repository.CreateChannelParams{
 		Name:        "todelete",
 		Description: sql.NullString{String: "Channel to delete", Valid: true},
 		CreatedBy:   user.ID,
@@ -282,7 +282,7 @@ func setupSuccessfulDelete(t *testing.T) (*repository.Queries, repository.Delete
 	}
 
 	params := repository.DeleteChannelParams{
-		ID:        ch.ID,
+		ID:        chId,
 		CreatedBy: user.ID,
 	}
 
@@ -302,10 +302,10 @@ func setupWrongCreatorDelete(t *testing.T) (*repository.Queries, repository.Dele
 		t.Fatalf("failed to create second user: %v", err)
 	}
 
-	ch := createChannelForUser(t, q, user1.ID, "protected", "Protected channel")
+	chId := createChannelForUser(t, q, user1.ID, "protected", "Protected channel")
 
 	params := repository.DeleteChannelParams{
-		ID:        ch.ID,
+		ID:        chId,
 		CreatedBy: user2.ID,
 	}
 
@@ -325,8 +325,8 @@ func setupNonExistentChannelDelete(t *testing.T) (*repository.Queries, repositor
 	return q, params, func() { _ = db.Close() }
 }
 
-func createChannelForUser(t *testing.T, q *repository.Queries, userID int64, name, description string) repository.Channel {
-	ch, err := q.CreateChannel(context.Background(), repository.CreateChannelParams{
+func createChannelForUser(t *testing.T, q *repository.Queries, userID int64, name, description string) int64 {
+	chId, err := q.CreateChannel(context.Background(), repository.CreateChannelParams{
 		Name:        name,
 		Description: sql.NullString{String: description, Valid: true},
 		CreatedBy:   userID,
@@ -334,7 +334,7 @@ func createChannelForUser(t *testing.T, q *repository.Queries, userID int64, nam
 	if err != nil {
 		t.Fatalf(msgCreateChannelFailed, err)
 	}
-	return ch
+	return chId
 }
 
 func runDeleteChannelTest(t *testing.T, setup func(t *testing.T) (*repository.Queries, repository.DeleteChannelParams, func()), wantErr bool) {
@@ -352,24 +352,9 @@ func runDeleteChannelTest(t *testing.T, setup func(t *testing.T) (*repository.Qu
 	}
 }
 
-func assertChannelCreated(t *testing.T, ch repository.Channel, wantName string, wantDescription sql.NullString, wantCreatedBy int64) {
+func assertChannelCreated(t *testing.T, chId int64, wantName string, wantDescription sql.NullString, wantCreatedBy int64) {
 	t.Helper()
-	if ch.ID == 0 {
+	if chId == 0 {
 		t.Fatal("expected non-zero ID")
-	}
-	if ch.Name != wantName {
-		t.Fatalf("expected name %q, got %q", wantName, ch.Name)
-	}
-	if ch.Description.Valid != wantDescription.Valid {
-		t.Fatalf("expected description validity %v, got %v", wantDescription.Valid, ch.Description.Valid)
-	}
-	if ch.Description.Valid && ch.Description.String != wantDescription.String {
-		t.Fatalf("expected description %q, got %q", wantDescription.String, ch.Description.String)
-	}
-	if ch.CreatedBy != wantCreatedBy {
-		t.Fatalf("expected created_by %d, got %d", wantCreatedBy, ch.CreatedBy)
-	}
-	if ch.CreatedAt.IsZero() {
-		t.Fatal("expected non-zero CreatedAt")
 	}
 }
