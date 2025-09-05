@@ -5,6 +5,11 @@ services:
       dockerfile: Dockerfile
     image: fortega21/olha-mensagem-app:latest
     container_name: olha-mensagem-app
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
     environment:
       PORT: 8080
       DB_NAME: /olha-mensagem-app/data/olha_mensagem.db
@@ -17,8 +22,16 @@ services:
       - app-network
 
   nginx:
-    image: nginx:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    image: fortega21/olha-mensagem-nginx:latest
     container_name: nginx-proxy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "80:80"
     volumes:

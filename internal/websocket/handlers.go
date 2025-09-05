@@ -49,7 +49,7 @@ func (wh *WebsocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	wh.logger.Info("WebSocket connection attempt", "channelID", channelId, "userID", userId)
+	wh.logger.Debug("WebSocket connection attempt", "channelID", channelId, "userID", userId)
 
 	dbUser, err := wh.queries.GetUserByID(r.Context(), int64(userId))
 	if err != nil {
