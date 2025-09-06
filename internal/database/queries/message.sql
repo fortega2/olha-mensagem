@@ -1,0 +1,26 @@
+-- name: CreateMessage :exec
+INSERT INTO messages (channel_id, user_id, content)
+VALUES (?, ?, ?);
+
+-- name: GetMessagesByChannel :many
+SELECT
+    m.id,
+    m.channel_id,
+    m.user_id,
+    u.username AS user_username,
+    m.content,
+    m.created_at
+FROM
+    messages AS m
+INNER JOIN
+    users AS u ON u.id = m.user_id
+WHERE
+    m.channel_id = ?
+ORDER BY
+    m.created_at ASC
+LIMIT
+    ?;
+
+-- name: DeleteMessageByChannel :exec
+DELETE FROM messages
+WHERE channel_id = ?;
