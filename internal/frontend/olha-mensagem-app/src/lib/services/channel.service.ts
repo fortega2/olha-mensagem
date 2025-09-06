@@ -1,8 +1,8 @@
-import { API_CHANNELS_BASE } from '$lib/config';
+import { API_BASE } from '$lib/config';
 import type { Channel, CreateChannelRequest } from '$lib/types/channel';
 
 export class ChannelService {
-	private readonly _fullUrl: string = API_CHANNELS_BASE;
+	private readonly _fullUrl: string = `${API_BASE}/channels`;
 	private readonly _headers: HeadersInit = {
 		'Content-Type': 'application/json'
 	};
