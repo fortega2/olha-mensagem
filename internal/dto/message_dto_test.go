@@ -29,8 +29,8 @@ func assertMessageDTOEquals(t *testing.T, expected, actual dto.MessageDTO) {
 		t.Errorf("Expected Content %s, got %s", expected.Content, actual.Content)
 	}
 
-	if actual.CreatedAt != expected.CreatedAt {
-		t.Errorf("Expected CreatedAt %s, got %s", expected.CreatedAt, actual.CreatedAt)
+	if actual.Timestamp != expected.Timestamp {
+		t.Errorf("Expected CreatedAt %s, got %s", expected.Timestamp, actual.Timestamp)
 	}
 }
 
@@ -56,7 +56,7 @@ func TestNewMessageDTO(t *testing.T) {
 				UserID:       5,
 				UserUsername: "testuser",
 				Content:      "Hello, world!",
-				CreatedAt:    "2023-12-25T10:30:00Z",
+				Timestamp:    "2023-12-25T10:30:00Z",
 			},
 		},
 		{
@@ -75,7 +75,7 @@ func TestNewMessageDTO(t *testing.T) {
 				UserID:       3,
 				UserUsername: "emptyuser",
 				Content:      "",
-				CreatedAt:    "2024-01-01T00:00:00Z",
+				Timestamp:    "2024-01-01T00:00:00Z",
 			},
 		},
 		{
@@ -94,7 +94,7 @@ func TestNewMessageDTO(t *testing.T) {
 				UserID:       7,
 				UserUsername: "specialuser",
 				Content:      "Special chars: @#$%^&*()_+{}|:<>?[]\\;'\",./ áéíóú",
-				CreatedAt:    "2024-06-15T14:45:30Z",
+				Timestamp:    "2024-06-15T14:45:30Z",
 			},
 		},
 		{
@@ -113,7 +113,7 @@ func TestNewMessageDTO(t *testing.T) {
 				UserID:       0,
 				UserUsername: "",
 				Content:      "",
-				CreatedAt:    "0001-01-01T00:00:00Z",
+				Timestamp:    "0001-01-01T00:00:00Z",
 			},
 		},
 	}
@@ -141,11 +141,11 @@ func TestNewMessageDTOTimeFormat(t *testing.T) {
 	result := dto.NewMessageDTO(repoMessage)
 
 	expectedTimeStr := "2024-03-15T09:45:30Z"
-	if result.CreatedAt != expectedTimeStr {
-		t.Errorf("Expected time format %s, got %s", expectedTimeStr, result.CreatedAt)
+	if result.Timestamp != expectedTimeStr {
+		t.Errorf("Expected time format %s, got %s", expectedTimeStr, result.Timestamp)
 	}
 
-	_, err := time.Parse(time.RFC3339, result.CreatedAt)
+	_, err := time.Parse(time.RFC3339, result.Timestamp)
 	if err != nil {
 		t.Errorf("Failed to parse formatted time: %v", err)
 	}
