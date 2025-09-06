@@ -53,6 +53,10 @@ func initializeDB(dbName string) (*sql.DB, error) {
 		return nil, err
 	}
 
+	if _, err := db.Exec(`PRAGMA foreign_keys = ON;`); err != nil {
+		return nil, err
+	}
+
 	if _, err := db.Exec(`PRAGMA journal_mode = WAL;`); err != nil {
 		return nil, err
 	}
