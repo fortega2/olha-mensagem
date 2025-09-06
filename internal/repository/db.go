@@ -36,17 +36,14 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.deleteChannelStmt, err = db.PrepareContext(ctx, deleteChannel); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteChannel: %w", err)
 	}
-	if q.deleteMessageByChannelStmt, err = db.PrepareContext(ctx, deleteMessageByChannel); err != nil {
-		return nil, fmt.Errorf("error preparing query DeleteMessageByChannel: %w", err)
-	}
 	if q.getAllChannelsStmt, err = db.PrepareContext(ctx, getAllChannels); err != nil {
 		return nil, fmt.Errorf("error preparing query GetAllChannels: %w", err)
 	}
 	if q.getChannelByIDStmt, err = db.PrepareContext(ctx, getChannelByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetChannelByID: %w", err)
 	}
-	if q.getMessagesByChannelStmt, err = db.PrepareContext(ctx, getMessagesByChannel); err != nil {
-		return nil, fmt.Errorf("error preparing query GetMessagesByChannel: %w", err)
+	if q.getHistoryMessagesByChannelStmt, err = db.PrepareContext(ctx, getHistoryMessagesByChannel); err != nil {
+		return nil, fmt.Errorf("error preparing query GetHistoryMessagesByChannel: %w", err)
 	}
 	if q.getUserByIDStmt, err = db.PrepareContext(ctx, getUserByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserByID: %w", err)
@@ -79,11 +76,6 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing deleteChannelStmt: %w", cerr)
 		}
 	}
-	if q.deleteMessageByChannelStmt != nil {
-		if cerr := q.deleteMessageByChannelStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing deleteMessageByChannelStmt: %w", cerr)
-		}
-	}
 	if q.getAllChannelsStmt != nil {
 		if cerr := q.getAllChannelsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getAllChannelsStmt: %w", cerr)
@@ -94,9 +86,9 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getChannelByIDStmt: %w", cerr)
 		}
 	}
-	if q.getMessagesByChannelStmt != nil {
-		if cerr := q.getMessagesByChannelStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing getMessagesByChannelStmt: %w", cerr)
+	if q.getHistoryMessagesByChannelStmt != nil {
+		if cerr := q.getHistoryMessagesByChannelStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getHistoryMessagesByChannelStmt: %w", cerr)
 		}
 	}
 	if q.getUserByIDStmt != nil {
@@ -146,33 +138,31 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                         DBTX
-	tx                         *sql.Tx
-	createChannelStmt          *sql.Stmt
-	createMessageStmt          *sql.Stmt
-	createUserStmt             *sql.Stmt
-	deleteChannelStmt          *sql.Stmt
-	deleteMessageByChannelStmt *sql.Stmt
-	getAllChannelsStmt         *sql.Stmt
-	getChannelByIDStmt         *sql.Stmt
-	getMessagesByChannelStmt   *sql.Stmt
-	getUserByIDStmt            *sql.Stmt
-	getUserByUsernameStmt      *sql.Stmt
+	db                              DBTX
+	tx                              *sql.Tx
+	createChannelStmt               *sql.Stmt
+	createMessageStmt               *sql.Stmt
+	createUserStmt                  *sql.Stmt
+	deleteChannelStmt               *sql.Stmt
+	getAllChannelsStmt              *sql.Stmt
+	getChannelByIDStmt              *sql.Stmt
+	getHistoryMessagesByChannelStmt *sql.Stmt
+	getUserByIDStmt                 *sql.Stmt
+	getUserByUsernameStmt           *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                         tx,
-		tx:                         tx,
-		createChannelStmt:          q.createChannelStmt,
-		createMessageStmt:          q.createMessageStmt,
-		createUserStmt:             q.createUserStmt,
-		deleteChannelStmt:          q.deleteChannelStmt,
-		deleteMessageByChannelStmt: q.deleteMessageByChannelStmt,
-		getAllChannelsStmt:         q.getAllChannelsStmt,
-		getChannelByIDStmt:         q.getChannelByIDStmt,
-		getMessagesByChannelStmt:   q.getMessagesByChannelStmt,
-		getUserByIDStmt:            q.getUserByIDStmt,
-		getUserByUsernameStmt:      q.getUserByUsernameStmt,
+		db:                              tx,
+		tx:                              tx,
+		createChannelStmt:               q.createChannelStmt,
+		createMessageStmt:               q.createMessageStmt,
+		createUserStmt:                  q.createUserStmt,
+		deleteChannelStmt:               q.deleteChannelStmt,
+		getAllChannelsStmt:              q.getAllChannelsStmt,
+		getChannelByIDStmt:              q.getChannelByIDStmt,
+		getHistoryMessagesByChannelStmt: q.getHistoryMessagesByChannelStmt,
+		getUserByIDStmt:                 q.getUserByIDStmt,
+		getUserByUsernameStmt:           q.getUserByUsernameStmt,
 	}
 }
