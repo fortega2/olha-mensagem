@@ -68,12 +68,12 @@ func (wh *WebsocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reque
 	wh.logger.Info("WebSocket connection established", "userID", userId, "username", dbUser.Username)
 
 	user := NewUser(int(dbUser.ID), dbUser.Username)
-	client := newClient(hub, conn, user, channelId)
+	client := newClient(hub, conn, wh.queries, user, channelId)
 
 	client.hub.register <- client
 
-	go client.writeClientMessages()
-	go client.readClientMessages()
+	go client.handleBroadcastMessages()
+	go client.processClientMessages()
 }
 
 func (wh *WebsocketHandler) getUserIDFromRequest(r *http.Request, w http.ResponseWriter) (int, bool) {
