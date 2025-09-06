@@ -26,17 +26,7 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) er
 	return err
 }
 
-const deleteMessageByChannel = `-- name: DeleteMessageByChannel :exec
-DELETE FROM messages
-WHERE channel_id = ?
-`
-
-func (q *Queries) DeleteMessageByChannel(ctx context.Context, channelID int64) error {
-	_, err := q.exec(ctx, q.deleteMessageByChannelStmt, deleteMessageByChannel, channelID)
-	return err
-}
-
-const getMessagesByChannel = `-- name: GetMessagesByChannel :many
+const getHistoryMessagesByChannel = `-- name: GetHistoryMessagesByChannel :many
 SELECT
     m.id,
     m.channel_id,
@@ -56,12 +46,12 @@ LIMIT
     ?
 `
 
-type GetMessagesByChannelParams struct {
+type GetHistoryMessagesByChannelParams struct {
 	ChannelID int64 `json:"channelId"`
 	Limit     int64 `json:"limit"`
 }
 
-type GetMessagesByChannelRow struct {
+type GetHistoryMessagesByChannelRow struct {
 	ID           int64     `json:"id"`
 	ChannelID    int64     `json:"channelId"`
 	UserID       int64     `json:"userId"`
@@ -70,15 +60,15 @@ type GetMessagesByChannelRow struct {
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
-func (q *Queries) GetMessagesByChannel(ctx context.Context, arg GetMessagesByChannelParams) ([]GetMessagesByChannelRow, error) {
-	rows, err := q.query(ctx, q.getMessagesByChannelStmt, getMessagesByChannel, arg.ChannelID, arg.Limit)
+func (q *Queries) GetHistoryMessagesByChannel(ctx context.Context, arg GetHistoryMessagesByChannelParams) ([]GetHistoryMessagesByChannelRow, error) {
+	rows, err := q.query(ctx, q.getHistoryMessagesByChannelStmt, getHistoryMessagesByChannel, arg.ChannelID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetMessagesByChannelRow
+	var items []GetHistoryMessagesByChannelRow
 	for rows.Next() {
-		var i GetMessagesByChannelRow
+		var i GetHistoryMessagesByChannelRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ChannelID,

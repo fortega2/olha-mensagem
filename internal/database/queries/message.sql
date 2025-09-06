@@ -2,7 +2,7 @@
 INSERT INTO messages (channel_id, user_id, content)
 VALUES (?, ?, ?);
 
--- name: GetMessagesByChannel :many
+-- name: GetHistoryMessagesByChannel :many
 SELECT
     m.id,
     m.channel_id,
@@ -20,7 +20,3 @@ ORDER BY
     m.created_at ASC
 LIMIT
     ?;
-
--- name: DeleteMessageByChannel :exec
-DELETE FROM messages
-WHERE channel_id = ?;

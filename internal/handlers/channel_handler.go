@@ -12,13 +12,6 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-const (
-	reqCtxErrMsg                       = "Request context error"
-	reqCtxCancelledOrTimedOutErrMsg    = "Request cancelled or timed out"
-	failedEncodeChannelDataErrMsg      = "Failed to encode channel data"
-	failedEncodeDeleteChannelRspErrMsg = "Failed to encode delete channel response"
-)
-
 func (h *Handler) GetAllChannels(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
