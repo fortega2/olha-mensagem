@@ -1,4 +1,33 @@
 services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.email=fortega2@gmail.com
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-letsencrypt:/letsencrypt
+    restart: unless-stopped
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   app:
     build:
       context: .
@@ -18,30 +47,25 @@ services:
       MESSAGES_LIMIT: 150
     volumes:
       - olha-mensagem-db-data:/olha-mensagem-app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`olhamensagem.online`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
+      - "traefik.http.services.app.loadbalancer.server.port=8080"
+      - "traefik.http.routers.app.middlewares=security-headers"
+      - "traefik.http.middlewares.security-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.security-headers.headers.sslredirect=true"
+      - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.security-headers.headers.stsPreload=true"
     restart: unless-stopped
-    networks:
-      - app-network
-
-  nginx:
-    build:
-      context: .
-      dockerfile: Dockerfile.nginx
-    image: fortega21/olha-mensagem-nginx:latest
-    container_name: nginx-proxy
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    ports:
-      - "80:80"
-    depends_on:
-      - app
     networks:
       - app-network
 
 volumes:
   olha-mensagem-db-data:
+  traefik-letsencrypt:
 
 networks:
   app-network:

@@ -1,0 +1,65 @@
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik-dev
+    command:
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --providers.docker.defaultrule=Host(`localhost`)
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.dashboard.entrypoints=web"
+      - "traefik.http.routers.dashboard.service=api@internal"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: olha-mensagem-app:dev
+    container_name: olha-mensagem-app-dev
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    environment:
+      PORT: 8081
+      DB_NAME: /olha-mensagem-app/data/olha_mensagem.db
+      DB_MIGRATIONS_PATH: /olha-mensagem-app/internal/database/migrations
+      LOG_LEVEL: DEBUG
+      MESSAGES_LIMIT: 50
+    volumes:
+      - olha-mensagem-db-data-dev:/olha-mensagem-app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app-dev.rule=Host(`localhost`) || Host(`olhamensagem.localhost`)"
+      - "traefik.http.routers.app-dev.entrypoints=web"
+      - "traefik.http.services.app-dev.loadbalancer.server.port=8081"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+volumes:
+  olha-mensagem-db-data-dev:
+
+networks:
+  app-network:
+    driver: bridge
