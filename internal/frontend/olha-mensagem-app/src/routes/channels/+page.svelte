@@ -139,15 +139,22 @@
 				{/if}
 			</div>
 			<div class="flex gap-3">
-				<Button onclick={() => loadChannels()} class="flex items-center gap-2" disabled={loading}>
+				<Button
+					onclick={() => loadChannels()}
+					class="flex cursor-pointer items-center gap-2"
+					disabled={loading}
+				>
 					<RefreshCwIcon size={16} class={loading ? 'animate-spin' : ''} />
 					{loading ? 'Loading...' : 'Refresh'}
 				</Button>
-				<Button onclick={() => (showCreateForm = !showCreateForm)} class="flex items-center gap-2">
+				<Button
+					onclick={() => (showCreateForm = !showCreateForm)}
+					class="flex cursor-pointer items-center gap-2"
+				>
 					<Plus size={16} />
 					Create Channel
 				</Button>
-				<Button variant="outline" onclick={logout}>Logout</Button>
+				<Button variant="outline" class="cursor-pointer" onclick={logout}>Logout</Button>
 			</div>
 		</div>
 
@@ -178,11 +185,16 @@
 							/>
 						</div>
 						<div class="flex gap-2">
-							<Button type="submit" disabled={creating || !newChannelName.trim()}>
+							<Button
+								type="submit"
+								class="cursor-pointer"
+								disabled={creating || !newChannelName.trim()}
+							>
 								{creating ? 'Creating...' : 'Create Channel'}
 							</Button>
 							<Button
 								variant="outline"
+								class="cursor-pointer"
 								onclick={() => (showCreateForm = false)}
 								disabled={creating}
 							>
@@ -204,7 +216,7 @@
 					<Users size={48} class="mx-auto mb-4 text-gray-400" />
 					<h3 class="mb-2 text-lg font-semibold text-gray-900">No channels available</h3>
 					<p class="mb-4 text-gray-600">Be the first to create a channel!</p>
-					<Button onclick={() => (showCreateForm = true)}>
+					<Button class="cursor-pointer" onclick={() => (showCreateForm = true)}>
 						<Plus size={16} class="mr-2" />
 						Create Channel
 					</Button>
@@ -234,13 +246,14 @@
 							</div>
 
 							<div class="flex justify-between">
-								<Button class="w-[15%] sm:w-[12%] lg:w-[10%]" onclick={() => joinChannel(channel)}
-									>Connect</Button
+								<Button
+									class="w-[15%] cursor-pointer sm:w-[12%] lg:w-[10%]"
+									onclick={() => joinChannel(channel)}>Connect</Button
 								>
 								{#if user && Number(user.id) === channel.createdBy}
 									<Button
 										variant="destructive"
-										class="w-[12%] sm:w-[10%] lg:w-[8%]"
+										class="w-[12%] cursor-pointer sm:w-[10%] lg:w-[8%]"
 										onclick={() => deleteChannel(channel)}
 									>
 										Delete

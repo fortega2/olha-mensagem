@@ -13,6 +13,8 @@
 	import { wsUrl } from '$lib/config';
 	import type { Channel } from '$lib/types/channel';
 	import { ArrowLeft } from '@lucide/svelte';
+	import { MessageService } from '$lib/services/message.service';
+	import { messageDtoToChatMessage, type MessageDto } from '$lib/types/message';
 
 	let ws: WebSocket | null = null;
 
@@ -23,6 +25,8 @@
 	let connecting = $state(true);
 
 	let messagesContainer: HTMLDivElement | null = null;
+
+	const messageSrv: MessageService = new MessageService();
 
 	onMount(() => {
 		if (typeof window === 'undefined') return;
@@ -42,6 +46,7 @@
 			}
 			selectedChannel = JSON.parse(storedChannel) as Channel;
 
+			loadHistoryMessages(selectedChannel.id);
 			connectWebSocket();
 		} catch {
 			goto('/login');
@@ -61,6 +66,17 @@
 		}
 	});
 
+	const loadHistoryMessages = async (channelId: number) => {
+		try {
+			const historyMsg = await messageSrv.getHistoryMessagesByChannel(channelId);
+			messages = historyMsg.map((m: MessageDto) => messageDtoToChatMessage(m));
+		} catch (err: unknown) {
+			toast.error(
+				`${err instanceof Error ? err.message : 'Error while fetching history messages'}`
+			);
+		}
+	};
+
 	const connectWebSocket = () => {
 		if (!user || !selectedChannel) return;
 
@@ -69,19 +85,17 @@
 
 		ws.onopen = () => {
 			connecting = false;
-			toast.success(`Conectado al canal "${selectedChannel?.name}"`);
 		};
 
 		ws.onerror = (e) => {
-			toast.error('Error WebSocket');
+			toast.error('WebSocket error');
 			console.error(e);
 		};
 
 		ws.onclose = (ev) => {
-			toast.info('Conexión cerrada');
 			if (ev.code !== 1000) {
 				setTimeout(() => {
-					toast.message('Reintentando...');
+					toast.message('Retrying...');
 					connectWebSocket();
 				}, 2000);
 			}
@@ -92,7 +106,7 @@
 				const msg: ChatMessage = JSON.parse(evt.data);
 				messages.push(msg);
 			} catch (err) {
-				toast.error(`Mensaje inválido: ${err instanceof Error ? err.message : ''}`);
+				toast.error(`Invalid message: ${err instanceof Error ? err.message : ''}`);
 			}
 		};
 	};
@@ -100,7 +114,7 @@
 	const sendMessage = () => {
 		if (!pendingMessage.trim()) return;
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
-			toast.error('No conectado');
+			toast.error('WebSocket is not connected');
 			return;
 		}
 
@@ -121,7 +135,7 @@
 		try {
 			return new Date(ts).toLocaleTimeString();
 		} catch {
-			return '';
+			return ts;
 		}
 	};
 </script>
@@ -131,7 +145,7 @@
 		<CardHeader class="pb-2">
 			<CardTitle class="flex items-center justify-between text-lg">
 				<div class="flex items-center gap-3">
-					<Button variant="ghost" size="sm" onclick={goBackToChannels}>
+					<Button variant="ghost" size="sm" class="cursor-pointer" onclick={goBackToChannels}>
 						<ArrowLeft size={16} />
 					</Button>
 					<div>
@@ -155,7 +169,7 @@
 						No hay mensajes en #{selectedChannel?.name || 'este canal'} todavía.
 					</p>
 				{:else}
-					{#each messages as m (m.timestamp + (m.userId ?? 0))}
+					{#each messages as m, index (m.userId + '-' + m.timestamp + '-' + index)}
 						{#if m.type === 'Chat'}
 							<div class="group">
 								<div class="flex items-baseline gap-2">
@@ -182,7 +196,11 @@
 					bind:value={pendingMessage}
 					disabled={connecting}
 				/>
-				<Button type="submit" class="shrink-0" disabled={connecting || !pendingMessage.trim()}>
+				<Button
+					type="submit"
+					class="shrink-0 cursor-pointer"
+					disabled={connecting || !pendingMessage.trim()}
+				>
 					Enviar
 				</Button>
 			</form>

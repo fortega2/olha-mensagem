@@ -1,7 +1,4 @@
-export const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) || '';
-
-export const API_USERS_BASE = `${API_BASE}/api/users`;
-export const API_CHANNELS_BASE = `${API_BASE}/api/channels`;
+export const API_BASE = ((import.meta.env.VITE_API_BASE as string | undefined) || '') + '/api';
 
 export function wsUrl(channelId: number, userId: number): string {
 	const proto =

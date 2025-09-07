@@ -36,7 +36,8 @@ COPY internal/database/migrations /olha-mensagem-app/internal/database/migration
 ENV PORT=8080 \
     DB_NAME=/olha-mensagem-app/data/olha_mensagem.db \
     DB_MIGRATIONS_PATH=/olha-mensagem-app/internal/database/migrations \
-    LOG_LEVEL=INFO
+    LOG_LEVEL=INFO \
+    MESSAGES_LIMIT=150
 EXPOSE 8080
 USER app
 CMD ["/olha-mensagem-app/main"]

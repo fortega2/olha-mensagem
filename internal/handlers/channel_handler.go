@@ -6,75 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
+	"github.com/fortega2/real-time-chat/internal/dto"
 	"github.com/fortega2/real-time-chat/internal/repository"
 	"github.com/go-chi/chi/v5"
 )
-
-const (
-	reqCtxErrMsg                       = "Request context error"
-	reqCtxCancelledOrTimedOutErrMsg    = "Request cancelled or timed out"
-	failedEncodeChannelDataErrMsg      = "Failed to encode channel data"
-	failedEncodeDeleteChannelRspErrMsg = "Failed to encode delete channel response"
-)
-
-type createChannelRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	UserID      int64  `json:"userId"`
-}
-
-func (ccr createChannelRequest) isValid() bool {
-	return ccr.Name != "" && ccr.UserID != 0
-}
-
-type channelResponse struct {
-	ID                int64  `json:"id"`
-	Name              string `json:"name"`
-	Description       string `json:"description"`
-	CreatedBy         int64  `json:"createdBy"`
-	CreatedByUsername string `json:"createdByUsername"`
-	CreatedAt         string `json:"createdAt"`
-}
-
-type deleteChannelResponse struct {
-	Message   string `json:"message"`
-	ChannelID int64  `json:"channelId"`
-}
-
-func newChannelResponse[T repository.GetChannelByIDRow | repository.GetAllChannelsRow](channel T) channelResponse {
-	setDescription := func(description sql.NullString) string {
-		if description.Valid {
-			return description.String
-		} else {
-			return ""
-		}
-	}
-
-	switch v := any(channel).(type) {
-	case repository.GetChannelByIDRow:
-		return channelResponse{
-			ID:                v.ID,
-			Name:              v.Name,
-			Description:       setDescription(v.Description),
-			CreatedBy:         v.CreatedBy,
-			CreatedByUsername: v.CreatedByUsername,
-			CreatedAt:         v.CreatedAt.Format(time.RFC3339),
-		}
-	case repository.GetAllChannelsRow:
-		return channelResponse{
-			ID:                v.ID,
-			Name:              v.Name,
-			Description:       setDescription(v.Description),
-			CreatedBy:         v.CreatedBy,
-			CreatedByUsername: v.CreatedByUsername,
-			CreatedAt:         v.CreatedAt.Format(time.RFC3339),
-		}
-	default:
-		return channelResponse{}
-	}
-}
 
 func (h *Handler) GetAllChannels(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -94,9 +30,9 @@ func (h *Handler) GetAllChannels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	channels := make([]channelResponse, len(channelsRepoRsp))
+	channels := make([]dto.ChannelResponseDTO, len(channelsRepoRsp))
 	for i, channel := range channelsRepoRsp {
-		channels[i] = newChannelResponse(channel)
+		channels[i] = dto.NewChannelResponse(channel)
 	}
 
 	respondWithJSON(w, http.StatusOK, channels, failedEncodeChannelDataErrMsg)
@@ -113,14 +49,14 @@ func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req createChannelRequest
+	var req dto.CreateChannelRequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Error("Failed to decode request body", "error", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	if !req.isValid() {
+	if !req.IsValid() {
 		h.logger.Error("Invalid channel data", "name", req.Name, "userID", req.UserID)
 		http.Error(w, "Channel name and user ID are required", http.StatusBadRequest)
 		return
@@ -158,7 +94,7 @@ func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := newChannelResponse(channel)
+	response := dto.NewChannelResponse(channel)
 	respondWithJSON(w, http.StatusCreated, response, failedEncodeChannelDataErrMsg)
 
 	h.logger.Info("Channel created successfully", "channel", channel)
@@ -229,7 +165,7 @@ func (h *Handler) DeleteChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := deleteChannelResponse{
+	response := dto.DeleteChannelResponseDTO{
 		Message:   fmt.Sprintf("Channel '%s' deleted successfully", channel.Name),
 		ChannelID: channelId,
 	}

@@ -9,12 +9,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const (
-	failedEncodeuserDataErrMsg     = "Failed to encode user data"
-	usernameAndPasswordEmptyErrMsg = "Username and password cannot be empty"
-	invalidRequestBodyErrMsg       = "Invalid request body"
-)
-
 type userCreateLoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`

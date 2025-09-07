@@ -1,8 +1,8 @@
-import { API_USERS_BASE } from '$lib/config';
+import { API_BASE } from '$lib/config';
 import type { AuthCredentials, UserDto } from '$lib/types/user.types';
 
 export class UserService {
-	private readonly _fullUrl: string = API_USERS_BASE;
+	private readonly _fullUrl: string = `${API_BASE}/users`;
 	private readonly _headers: HeadersInit = {
 		'Content-Type': 'application/json'
 	};

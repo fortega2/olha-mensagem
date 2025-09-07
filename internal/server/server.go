@@ -87,6 +87,10 @@ func (s *Server) setRoutes(r *chi.Mux) {
 			r.Delete("/{channelId}/users/{userId}", handlers.DeleteChannel)
 		})
 
+		r.Route("/messages", func(r chi.Router) {
+			r.Get("/history/{channelId}", handlers.GetHistoryMessagesByChannel)
+		})
+
 		r.Get("/ws/{channelId}/{userId}", wsHandler.HandleWebSocket)
 	})
 

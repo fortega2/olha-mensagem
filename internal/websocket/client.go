@@ -2,15 +2,18 @@ package websocket
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"time"
 
+	"github.com/fortega2/real-time-chat/internal/repository"
 	"github.com/gorilla/websocket"
 )
 
 type Client struct {
 	hub       *Hub
 	conn      *websocket.Conn
+	queries   *repository.Queries
 	send      chan []byte
 	user      *User
 	ChannelID int
@@ -23,17 +26,18 @@ const (
 	pingPeriod     = (writeWait * 9) / 10
 )
 
-func newClient(hub *Hub, conn *websocket.Conn, user *User, channelID int) *Client {
+func newClient(hub *Hub, conn *websocket.Conn, queries *repository.Queries, user *User, channelID int) *Client {
 	return &Client{
 		hub:       hub,
 		conn:      conn,
+		queries:   queries,
 		send:      make(chan []byte, 256),
 		user:      user,
 		ChannelID: channelID,
 	}
 }
 
-func (c *Client) readClientMessages() {
+func (c *Client) processClientMessages() {
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
@@ -69,11 +73,25 @@ func (c *Client) readClientMessages() {
 			continue
 		}
 
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		err = c.queries.CreateMessage(ctx, repository.CreateMessageParams{
+			ChannelID: int64(c.ChannelID),
+			UserID:    int64(c.user.ID),
+			UserColor: c.user.Color,
+			Content:   content,
+		})
+		if err != nil {
+			c.hub.logger.Error("Failed to persist message", "error", err, "userId", c.user.ID, "channelId", c.ChannelID)
+			continue
+		}
+		c.hub.logger.Debug("Message create and broadcast", "user", c.user.Username, "channelId", c.ChannelID, "message", content)
+
 		c.hub.broadcast <- jsonMsg
 	}
 }
 
-func (c *Client) writeClientMessages() {
+func (c *Client) handleBroadcastMessages() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()

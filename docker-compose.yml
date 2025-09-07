@@ -15,6 +15,7 @@ services:
       DB_NAME: /olha-mensagem-app/data/olha_mensagem.db
       DB_MIGRATIONS_PATH: /olha-mensagem-app/internal/database/migrations
       LOG_LEVEL: INFO
+      MESSAGES_LIMIT: 150
     volumes:
       - olha-mensagem-db-data:/olha-mensagem-app/data
     restart: unless-stopped
@@ -34,8 +35,6 @@ services:
         max-file: "3"
     ports:
       - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - app
     networks:
