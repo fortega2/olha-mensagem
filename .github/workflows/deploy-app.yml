@@ -24,8 +24,6 @@ jobs:
         docker compose down --remove-orphans
         docker images --format '{{.Repository}}:{{.Tag}}' | grep olha-mensagem-app:latest >/dev/null && \
           docker tag fortega21/olha-mensagem-app:latest fortega21/olha-mensagem-app:backup || true
-        docker images --format '{{.Repository}}:{{.Tag}}' | grep olha-mensagem-nginx:latest >/dev/null && \
-          docker tag fortega21/olha-mensagem-nginx:latest fortega21/olha-mensagem-nginx:backup || true
 
     - name: Deploy with rollback capability
       run: |
@@ -35,7 +33,6 @@ jobs:
         if ! docker compose up -d --force-recreate; then
           echo "Deployment failed, rolling back..."
           docker tag fortega21/olha-mensagem-app:backup fortega21/olha-mensagem-app:latest || true
-          docker tag fortega21/olha-mensagem-nginx:backup fortega21/olha-mensagem-nginx:latest || true
           docker compose up -d --force-recreate
           exit 1
         fi
