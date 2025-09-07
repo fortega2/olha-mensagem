@@ -170,12 +170,13 @@ func initializeTestDBWithMessages(t *testing.T) *sql.DB {
 	createMessagesTableSQL := `
 	CREATE TABLE IF NOT EXISTS messages (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		user_id INTEGER NOT NULL,
 		channel_id INTEGER NOT NULL,
+		user_id INTEGER NOT NULL,
+		user_color VARCHAR(7) NOT NULL,
 		content TEXT NOT NULL,
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		FOREIGN KEY (user_id) REFERENCES users(id),
-		FOREIGN KEY (channel_id) REFERENCES channels(id)
+		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE,
+		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 	);`
 	if _, err := db.Exec(createMessagesTableSQL); err != nil {
 		t.Fatalf("Failed to create messages table: %v", err)
@@ -192,7 +193,7 @@ func initializeTestDBWithMessages(t *testing.T) *sql.DB {
 	}
 
 	for i := 1; i <= 5; i++ {
-		_, err = db.Exec("INSERT INTO messages (user_id, channel_id, content) VALUES (1, 1, ?)", "Test message "+strconv.Itoa(i))
+		_, err = db.Exec("INSERT INTO messages (channel_id, user_id, user_color, content) VALUES (1, 1, ?, ?)", "#3498db", "Test message "+strconv.Itoa(i))
 		if err != nil {
 			t.Fatalf("Failed to insert test message: %v", err)
 		}

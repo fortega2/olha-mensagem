@@ -15,6 +15,7 @@ services:
       DB_NAME: /olha-mensagem-app/data/olha_mensagem.db
       DB_MIGRATIONS_PATH: /olha-mensagem-app/internal/database/migrations
       LOG_LEVEL: INFO
+      MESSAGES_LIMIT: 150
     volumes:
       - olha-mensagem-db-data:/olha-mensagem-app/data
     restart: unless-stopped
