@@ -11,6 +11,7 @@ type MessageDTO struct {
 	ChannelID    int64  `json:"channelId"`
 	UserID       int64  `json:"userId"`
 	UserUsername string `json:"userUsername"`
+	UserColor    string `json:"userColor"`
 	Content      string `json:"content"`
 	Timestamp    string `json:"timestamp"`
 }
@@ -21,6 +22,7 @@ func NewMessageDTO(repoMessage repository.GetHistoryMessagesByChannelRow) Messag
 		ChannelID:    repoMessage.ChannelID,
 		UserID:       repoMessage.UserID,
 		UserUsername: repoMessage.UserUsername,
+		UserColor:    repoMessage.UserColor,
 		Content:      repoMessage.Content,
 		Timestamp:    repoMessage.CreatedAt.Format(time.RFC3339),
 	}

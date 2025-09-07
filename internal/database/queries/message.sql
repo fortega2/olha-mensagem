@@ -1,12 +1,13 @@
 -- name: CreateMessage :exec
-INSERT INTO messages (channel_id, user_id, content)
-VALUES (?, ?, ?);
+INSERT INTO messages (channel_id, user_id, user_color, content)
+VALUES (?, ?, ?, ?);
 
 -- name: GetHistoryMessagesByChannel :many
 SELECT
     m.id,
     m.channel_id,
     m.user_id,
+    m.user_color,
     u.username AS user_username,
     m.content,
     m.created_at

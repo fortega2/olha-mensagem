@@ -5,6 +5,7 @@ export type MessageDto = {
 	channelId: number;
 	userId: number;
 	userUsername: string;
+	userColor: string;
 	content: string;
 	timestamp: string;
 };
@@ -16,6 +17,6 @@ export function messageDtoToChatMessage(message: MessageDto): ChatMessage {
 		username: message.userUsername,
 		content: message.content,
 		timestamp: message.timestamp,
-		color: '#000000'
+		color: message.userColor
 	};
 }

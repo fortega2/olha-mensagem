@@ -85,19 +85,17 @@
 
 		ws.onopen = () => {
 			connecting = false;
-			toast.success(`Conectado al canal "${selectedChannel?.name}"`);
 		};
 
 		ws.onerror = (e) => {
-			toast.error('Error WebSocket');
+			toast.error('WebSocket error');
 			console.error(e);
 		};
 
 		ws.onclose = (ev) => {
-			toast.info('Conexión cerrada');
 			if (ev.code !== 1000) {
 				setTimeout(() => {
-					toast.message('Reintentando...');
+					toast.message('Retrying...');
 					connectWebSocket();
 				}, 2000);
 			}
@@ -108,7 +106,7 @@
 				const msg: ChatMessage = JSON.parse(evt.data);
 				messages.push(msg);
 			} catch (err) {
-				toast.error(`Mensaje inválido: ${err instanceof Error ? err.message : ''}`);
+				toast.error(`Invalid message: ${err instanceof Error ? err.message : ''}`);
 			}
 		};
 	};
@@ -116,7 +114,7 @@
 	const sendMessage = () => {
 		if (!pendingMessage.trim()) return;
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
-			toast.error('No conectado');
+			toast.error('WebSocket is not connected');
 			return;
 		}
 
