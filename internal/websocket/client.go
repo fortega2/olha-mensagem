@@ -76,8 +76,9 @@ func (c *Client) processClientMessages() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		err = c.queries.CreateMessage(ctx, repository.CreateMessageParams{
-			UserID:    int64(c.user.ID),
 			ChannelID: int64(c.ChannelID),
+			UserID:    int64(c.user.ID),
+			UserColor: c.user.Color,
 			Content:   content,
 		})
 		if err != nil {

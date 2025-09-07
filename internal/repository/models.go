@@ -21,6 +21,7 @@ type Message struct {
 	ID        int64     `json:"id"`
 	ChannelID int64     `json:"channelId"`
 	UserID    int64     `json:"userId"`
+	UserColor string    `json:"userColor"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"createdAt"`
 }

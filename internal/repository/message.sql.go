@@ -11,18 +11,24 @@ import (
 )
 
 const createMessage = `-- name: CreateMessage :exec
-INSERT INTO messages (channel_id, user_id, content)
-VALUES (?, ?, ?)
+INSERT INTO messages (channel_id, user_id, user_color, content)
+VALUES (?, ?, ?, ?)
 `
 
 type CreateMessageParams struct {
 	ChannelID int64  `json:"channelId"`
 	UserID    int64  `json:"userId"`
+	UserColor string `json:"userColor"`
 	Content   string `json:"content"`
 }
 
 func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) error {
-	_, err := q.exec(ctx, q.createMessageStmt, createMessage, arg.ChannelID, arg.UserID, arg.Content)
+	_, err := q.exec(ctx, q.createMessageStmt, createMessage,
+		arg.ChannelID,
+		arg.UserID,
+		arg.UserColor,
+		arg.Content,
+	)
 	return err
 }
 
@@ -31,6 +37,7 @@ SELECT
     m.id,
     m.channel_id,
     m.user_id,
+    m.user_color,
     u.username AS user_username,
     m.content,
     m.created_at
@@ -55,6 +62,7 @@ type GetHistoryMessagesByChannelRow struct {
 	ID           int64     `json:"id"`
 	ChannelID    int64     `json:"channelId"`
 	UserID       int64     `json:"userId"`
+	UserColor    string    `json:"userColor"`
 	UserUsername string    `json:"userUsername"`
 	Content      string    `json:"content"`
 	CreatedAt    time.Time `json:"createdAt"`
@@ -73,6 +81,7 @@ func (q *Queries) GetHistoryMessagesByChannel(ctx context.Context, arg GetHistor
 			&i.ID,
 			&i.ChannelID,
 			&i.UserID,
+			&i.UserColor,
 			&i.UserUsername,
 			&i.Content,
 			&i.CreatedAt,
