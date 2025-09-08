@@ -27,7 +27,7 @@ func TestGetHistoryMessagesByChannel(t *testing.T) {
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDBWithMessages(t)
 				queries := repository.New(db)
-				h := handlers.NewHandler(getMockLogger(), queries)
+				h := handlers.NewHandler(getMockLogger(), queries, db)
 				return h, func() { db.Close() }
 			},
 			expectedStatus: http.StatusOK,
@@ -38,7 +38,7 @@ func TestGetHistoryMessagesByChannel(t *testing.T) {
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDB(t)
 				queries := repository.New(db)
-				h := handlers.NewHandler(getMockLogger(), queries)
+				h := handlers.NewHandler(getMockLogger(), queries, db)
 				return h, func() { db.Close() }
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -49,7 +49,7 @@ func TestGetHistoryMessagesByChannel(t *testing.T) {
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDB(t)
 				queries := repository.New(db)
-				h := handlers.NewHandler(getMockLogger(), queries)
+				h := handlers.NewHandler(getMockLogger(), queries, db)
 				return h, func() { db.Close() }
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -60,7 +60,7 @@ func TestGetHistoryMessagesByChannel(t *testing.T) {
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDBWithMessages(t)
 				queries := repository.New(db)
-				h := handlers.NewHandler(getMockLogger(), queries)
+				h := handlers.NewHandler(getMockLogger(), queries, db)
 				return h, func() { db.Close() }
 			},
 			expectedStatus: http.StatusOK,
@@ -106,7 +106,7 @@ func TestGetHistoryMessagesByChannelWithCustomLimit(t *testing.T) {
 	db := initializeTestDBWithMessages(t)
 	defer db.Close()
 	queries := repository.New(db)
-	h := handlers.NewHandler(getMockLogger(), queries)
+	h := handlers.NewHandler(getMockLogger(), queries, db)
 
 	req := httptest.NewRequest(http.MethodGet, "/channels/1/messages", nil)
 	w := httptest.NewRecorder()
@@ -134,7 +134,7 @@ func TestGetHistoryMessagesByChannelInvalidLimit(t *testing.T) {
 	db := initializeTestDBWithMessages(t)
 	defer db.Close()
 	queries := repository.New(db)
-	h := handlers.NewHandler(getMockLogger(), queries)
+	h := handlers.NewHandler(getMockLogger(), queries, db)
 
 	req := httptest.NewRequest(http.MethodGet, "/channels/1/messages", nil)
 	w := httptest.NewRecorder()
