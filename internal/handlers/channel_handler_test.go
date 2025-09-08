@@ -37,7 +37,7 @@ func TestGetAllChannels(t *testing.T) {
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDBWithChannels(t)
 				queries := repository.New(db)
-				h := handlers.NewHandler(getMockLogger(), queries)
+				h := handlers.NewHandler(getMockLogger(), queries, db)
 				return h, func() { db.Close() }
 			},
 			expectedStatus: http.StatusOK,
@@ -102,7 +102,7 @@ func TestCreateChannel(t *testing.T) {
 					t.Fatalf(failedCreateTestUser, err)
 				}
 
-				h := handlers.NewHandler(getMockLogger(), queries)
+				h := handlers.NewHandler(getMockLogger(), queries, db)
 				return h, func() { db.Close() }
 			},
 			payload:        map[string]interface{}{"name": "general", "description": "General discussion", "userId": int64(1)},
@@ -112,7 +112,7 @@ func TestCreateChannel(t *testing.T) {
 			name: "Empty Channel Name",
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDBWithChannels(t)
-				h := handlers.NewHandler(getMockLogger(), repository.New(db))
+				h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 				return h, func() { db.Close() }
 			},
 			payload:        map[string]interface{}{"name": "", "description": "Empty name test", "userId": int64(1)},
@@ -122,7 +122,7 @@ func TestCreateChannel(t *testing.T) {
 			name: "Invalid User ID - Zero",
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDBWithChannels(t)
-				h := handlers.NewHandler(getMockLogger(), repository.New(db))
+				h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 				return h, func() { db.Close() }
 			},
 			payload:        map[string]interface{}{"name": "test", "description": testChannelDesc, "userId": int64(0)},
@@ -132,7 +132,7 @@ func TestCreateChannel(t *testing.T) {
 			name: "Missing User ID",
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDBWithChannels(t)
-				h := handlers.NewHandler(getMockLogger(), repository.New(db))
+				h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 				return h, func() { db.Close() }
 			},
 			payload:        map[string]interface{}{"name": "test", "description": testChannelDesc},
@@ -142,7 +142,7 @@ func TestCreateChannel(t *testing.T) {
 			name: "Invalid JSON",
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDBWithChannels(t)
-				h := handlers.NewHandler(getMockLogger(), repository.New(db))
+				h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 				return h, func() { db.Close() }
 			},
 			payload:        "invalid-json",
@@ -152,7 +152,7 @@ func TestCreateChannel(t *testing.T) {
 			name: "User Does Not Exist",
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDBWithChannels(t)
-				h := handlers.NewHandler(getMockLogger(), repository.New(db))
+				h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 				return h, func() { db.Close() }
 			},
 			payload:        map[string]interface{}{"name": "test", "description": testChannelDesc, "userId": int64(999)},
@@ -172,7 +172,7 @@ func TestCreateChannel(t *testing.T) {
 					t.Fatalf(failedCreateTestUser, err)
 				}
 
-				h := handlers.NewHandler(getMockLogger(), queries)
+				h := handlers.NewHandler(getMockLogger(), queries, db)
 				return h, func() { db.Close() }
 			},
 			payload:        map[string]interface{}{"name": "random", "userId": int64(1)},
@@ -182,7 +182,7 @@ func TestCreateChannel(t *testing.T) {
 			name: "User Does Not Exist",
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDBWithChannels(t)
-				h := handlers.NewHandler(getMockLogger(), repository.New(db))
+				h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 				return h, func() { db.Close() }
 			},
 			payload:        map[string]any{"name": "test", "description": testChannelDesc, "userId": int64(999)},
@@ -223,7 +223,7 @@ func TestCreateChannel(t *testing.T) {
 func TestCreateChannelInvalidJSONSyntax(t *testing.T) {
 	db := initializeTestDBWithChannels(t)
 	defer db.Close()
-	h := handlers.NewHandler(getMockLogger(), repository.New(db))
+	h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 
 	req := httptest.NewRequest(http.MethodPost, pathChannels, bytes.NewBufferString("{"))
 	req.Header.Set(headerContentType, mimeApplicationJSON)
@@ -243,7 +243,7 @@ func TestCreateChannelInvalidJSONSyntax(t *testing.T) {
 func TestCreateChannelMissingUserID(t *testing.T) {
 	db := initializeTestDBWithChannels(t)
 	defer db.Close()
-	h := handlers.NewHandler(getMockLogger(), repository.New(db))
+	h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 
 	payload := map[string]string{"name": "test", "description": testChannelDesc}
 	body, _ := json.Marshal(payload)
@@ -349,7 +349,7 @@ func setupSuccessfulChannelDeletion(t *testing.T) (*handlers.Handler, int64, int
 		t.Fatalf("Failed to create test channel: %v", err)
 	}
 
-	h := handlers.NewHandler(getMockLogger(), queries)
+	h := handlers.NewHandler(getMockLogger(), queries, db)
 	return h, chId, user.ID, func() { db.Close() }
 }
 
@@ -365,7 +365,7 @@ func setupChannelNotFound(t *testing.T) (*handlers.Handler, int64, int64, func()
 		t.Fatalf(failedCreateTestUser, err)
 	}
 
-	h := handlers.NewHandler(getMockLogger(), queries)
+	h := handlers.NewHandler(getMockLogger(), queries, db)
 	return h, 9999, user.ID, func() { db.Close() }
 }
 
@@ -398,13 +398,13 @@ func setupUserNotOwner(t *testing.T) (*handlers.Handler, int64, int64, func()) {
 		t.Fatalf("Failed to create test channel: %v", err)
 	}
 
-	h := handlers.NewHandler(getMockLogger(), queries)
+	h := handlers.NewHandler(getMockLogger(), queries, db)
 	return h, chId, notOwner.ID, func() { db.Close() }
 }
 
 func setupBasicHandler(t *testing.T) (*handlers.Handler, int64, int64, func()) {
 	db := initializeTestDBWithChannels(t)
-	h := handlers.NewHandler(getMockLogger(), repository.New(db))
+	h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 	return h, 0, 0, func() { db.Close() }
 }
 
@@ -503,7 +503,7 @@ func setupChannelTest(t *testing.T) (*sql.DB, *handlers.Handler) {
 	db := initializeTestDBWithChannels(t)
 
 	queries := repository.New(db)
-	h := handlers.NewHandler(getMockLogger(), queries)
+	h := handlers.NewHandler(getMockLogger(), queries, db)
 
 	user, err := queries.CreateUser(context.Background(), repository.CreateUserParams{
 		Username: "channeltestuser",

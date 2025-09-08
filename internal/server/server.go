@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"os"
 	"time"
@@ -14,10 +15,11 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func NewServer(l logger.Logger, q *repository.Queries) *Server {
+func NewServer(l logger.Logger, q *repository.Queries, db *sql.DB) *Server {
 	return &Server{
 		logger:  l,
 		queries: q,
+		db:      db,
 	}
 }
 
@@ -72,8 +74,10 @@ func (s *Server) configMiddlewares(r *chi.Mux) {
 }
 
 func (s *Server) setRoutes(r *chi.Mux) {
-	handlers := handlers.NewHandler(s.logger, s.queries)
+	handlers := handlers.NewHandler(s.logger, s.queries, s.db)
 	wsHandler := websocket.NewWebsocketHandler(s.logger, s.queries)
+
+	r.Get("/health", handlers.HealthCheck)
 
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/users", func(r chi.Router) {
