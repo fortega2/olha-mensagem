@@ -165,7 +165,7 @@ func checkHealthCheckResponse(t *testing.T, recorder *httptest.ResponseRecorder,
 		t.Fatalf("Failed to decode health check response: %v", err)
 	}
 
-	if response.Status != expectedStatus {
+	if response.Status != dto.HealthStatus(expectedStatus) {
 		t.Errorf("Expected status %s, got %s", expectedStatus, response.Status)
 	}
 

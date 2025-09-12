@@ -53,6 +53,12 @@ services:
       - "traefik.http.routers.app-dev.rule=Host(`localhost`) || Host(`olhamensagem.localhost`)"
       - "traefik.http.routers.app-dev.entrypoints=web"
       - "traefik.http.services.app-dev.loadbalancer.server.port=8081"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     restart: unless-stopped
     networks:
       - app-network
