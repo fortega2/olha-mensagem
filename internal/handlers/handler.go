@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"database/sql"
+
 	"github.com/fortega2/real-time-chat/internal/logger"
 	"github.com/fortega2/real-time-chat/internal/repository"
 )
@@ -17,16 +19,20 @@ const (
 	failedEncodeDeleteChannelRspErrMsg = "Failed to encode delete channel response"
 
 	failedEncodeMessageDataErrMsg = "Failed to encode message data"
+
+	failedEncodeHealthCheckErrMsg = "Failed to encode health check response"
 )
 
 type Handler struct {
 	logger  logger.Logger
 	queries *repository.Queries
+	db      *sql.DB
 }
 
-func NewHandler(l logger.Logger, q *repository.Queries) *Handler {
+func NewHandler(l logger.Logger, q *repository.Queries, db *sql.DB) *Handler {
 	return &Handler{
 		logger:  l,
 		queries: q,
+		db:      db,
 	}
 }

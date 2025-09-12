@@ -38,7 +38,7 @@ func main() {
 	}()
 
 	queries := repository.New(db.GetDB())
-	srv := server.NewServer(logger, queries)
+	srv := server.NewServer(logger, queries, db.GetDB())
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)

@@ -55,10 +55,19 @@ services:
       - "traefik.http.services.app.loadbalancer.server.port=8080"
       - "traefik.http.routers.app.middlewares=security-headers"
       - "traefik.http.middlewares.security-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.security-headers.headers.customrequestheaders.X-Content-Type-Options=nosniff"
+      - "traefik.http.middlewares.security-headers.headers.customrequestheaders.X-Frame-Options=DENY"
+      - "traefik.http.middlewares.security-headers.headers.customrequestheaders.X-XSS-Protection=1; mode=block"
       - "traefik.http.middlewares.security-headers.headers.sslredirect=true"
       - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
       - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
       - "traefik.http.middlewares.security-headers.headers.stsPreload=true"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     restart: unless-stopped
     networks:
       - app-network

@@ -17,6 +17,10 @@ jobs:
     runs-on: self-hosted
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
+    - name: Update docker-compose.yml on VM
+      run: |
+        cp docker-compose.yml ${{ secrets.OLHA_MENSAGEM_DIRECTORY_VM }}/docker-compose.yml
+    
     - name: Backup current deployment
       run: |
         set -euo pipefail
@@ -36,3 +40,21 @@ jobs:
           docker compose up -d --force-recreate
           exit 1
         fi
+
+    - name: Wait for application to be healthy
+      run: |
+        set -euo pipefail
+        cd ${{ secrets.OLHA_MENSAGEM_DIRECTORY_VM }}
+        echo "Waiting for application to be healthy..."
+        for i in {1..12}; do
+          if docker compose ps app | grep -q "healthy"; then
+            echo "Application is healthy!"
+            exit 0
+          fi
+          echo "Attempt $i/12: Application not ready yet, waiting 5 seconds..."
+          sleep 5
+        done
+        echo "Application failed to become healthy within 60 seconds, rolling back..."
+        docker tag fortega21/olha-mensagem-app:backup fortega21/olha-mensagem-app:latest || true
+        docker compose up -d --force-recreate
+        exit 1

@@ -30,7 +30,9 @@ const (
 )
 
 func TestNewHandler(t *testing.T) {
-	h := handlers.NewHandler(getMockLogger(), nil)
+	db := initializeTestDB(t)
+	defer db.Close()
+	h := handlers.NewHandler(getMockLogger(), nil, db)
 	if h == nil {
 		t.Fatal("Expected handler to be created, got nil")
 	}
@@ -48,7 +50,7 @@ func TestCreateUser(t *testing.T) {
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDB(t)
 				queries := repository.New(db)
-				h := handlers.NewHandler(getMockLogger(), queries)
+				h := handlers.NewHandler(getMockLogger(), queries, db)
 				return h, func() { db.Close() }
 			},
 			payload:        map[string]string{"username": "newuser", "password": "password123"},
@@ -67,7 +69,7 @@ func TestCreateUser(t *testing.T) {
 			name: "Empty Username",
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDB(t)
-				h := handlers.NewHandler(getMockLogger(), repository.New(db))
+				h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 				return h, func() { db.Close() }
 			},
 			payload:        map[string]string{"username": "", "password": "password123"},
@@ -77,7 +79,7 @@ func TestCreateUser(t *testing.T) {
 			name: "Empty Password",
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDB(t)
-				h := handlers.NewHandler(getMockLogger(), repository.New(db))
+				h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 				return h, func() { db.Close() }
 			},
 			payload:        map[string]string{"username": "someone", "password": ""},
@@ -87,7 +89,7 @@ func TestCreateUser(t *testing.T) {
 			name: "Invalid JSON",
 			setup: func(t *testing.T) (*handlers.Handler, func()) {
 				db := initializeTestDB(t)
-				h := handlers.NewHandler(getMockLogger(), repository.New(db))
+				h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 				return h, func() { db.Close() }
 			},
 			payload:        "invalid-json",
@@ -127,7 +129,7 @@ func TestCreateUser(t *testing.T) {
 func TestCreateUserInvalidJSONSyntax(t *testing.T) {
 	db := initializeTestDB(t)
 	defer db.Close()
-	h := handlers.NewHandler(getMockLogger(), repository.New(db))
+	h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 
 	req := httptest.NewRequest(http.MethodPost, pathUsers, bytes.NewBufferString("{"))
 	req.Header.Set(headerContentType, mimeApplicationJSON)
@@ -147,7 +149,7 @@ func TestCreateUserPasswordStoredHashed(t *testing.T) {
 	db := initializeTestDB(t)
 	defer db.Close()
 	queries := repository.New(db)
-	h := handlers.NewHandler(getMockLogger(), queries)
+	h := handlers.NewHandler(getMockLogger(), queries, db)
 
 	body, _ := json.Marshal(map[string]string{"username": "hashuser", "password": "secret"})
 	req := httptest.NewRequest(http.MethodPost, pathUsers, bytes.NewBuffer(body))
@@ -218,7 +220,7 @@ func TestLoginUser(t *testing.T) {
 func TestLoginUserInvalidJSONSyntax(t *testing.T) {
 	db := initializeTestDB(t)
 	defer db.Close()
-	h := handlers.NewHandler(getMockLogger(), repository.New(db))
+	h := handlers.NewHandler(getMockLogger(), repository.New(db), db)
 
 	req := httptest.NewRequest(http.MethodPost, pathLogin, bytes.NewBufferString("{"))
 	req.Header.Set(headerContentType, mimeApplicationJSON)
@@ -263,7 +265,7 @@ func setupUserTest(t *testing.T) (*sql.DB, *handlers.Handler) {
 	db := initializeTestDB(t)
 
 	queries := repository.New(db)
-	h := handlers.NewHandler(getMockLogger(), queries)
+	h := handlers.NewHandler(getMockLogger(), queries, db)
 
 	password := "password123"
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
