@@ -17,12 +17,12 @@ func (h *Handler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.db.PingContext(ctx); err != nil {
 		h.logger.Error("Database ping failed", "error", err)
-		respondWithJSON(w, http.StatusServiceUnavailable, dto.NewHealthCheckResponse("unhealthy", getVersion(), err), failedEncodeHealthCheckErrMsg)
+		respondWithJSON(w, http.StatusServiceUnavailable, dto.NewHealthCheckResponse(dto.HealthStatusUnhealthy, getVersion(), err), failedEncodeHealthCheckErrMsg)
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, dto.NewHealthCheckResponse("healthy", getVersion(), nil), failedEncodeHealthCheckErrMsg)
-	h.logger.Info("Health check successful")
+	respondWithJSON(w, http.StatusOK, dto.NewHealthCheckResponse(dto.HealthStatusHealthy, getVersion(), nil), failedEncodeHealthCheckErrMsg)
+	h.logger.Debug("Health check successful")
 }
 
 func getVersion() string {

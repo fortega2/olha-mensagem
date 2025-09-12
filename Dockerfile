@@ -27,7 +27,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/main ./cmd/real-time-chat
 
 FROM alpine:3.22
-RUN apk add --no-cache ca-certificates sqlite-libs tzdata \
+RUN apk add --no-cache ca-certificates curl sqlite-libs tzdata \
     && addgroup -S app && adduser -S -G app app \
     && mkdir -p /olha-mensagem-app/data && chown app:app /olha-mensagem-app/data
 WORKDIR /olha-mensagem-app
@@ -40,4 +40,8 @@ ENV PORT=8080 \
     MESSAGES_LIMIT=150
 EXPOSE 8080
 USER app
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -fsS --max-time 8 http://localhost:${PORT}/health || exit 1
+
 CMD ["/olha-mensagem-app/main"]
